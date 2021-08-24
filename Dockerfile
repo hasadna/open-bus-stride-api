@@ -9,5 +9,7 @@ RUN pip install -r requirements-docker.txt
 COPY setup.py ./
 COPY open_bus_stride_api ./open_bus_stride_api
 RUN pip install -e .
+ARG VERSION=local-docker
+RUN echo "VERSION = '${VERSION}'" > open_bus_stride_api/version.py
 ENV PYTHONUNBUFFERED=1
 ENTRYPOINT ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-c", "gunicorn_conf.py", "open_bus_stride_api.main:app"]

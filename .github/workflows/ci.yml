@@ -17,7 +17,7 @@ jobs:
         else
           CACHE_FROM_ARG=""
         fi &&\
-        docker build $CACHE_FROM_ARG -t app . &&\
+        docker build $CACHE_FROM_ARG --build-arg VERSION=${GITHUB_SHA} -t app . &&\
         docker tag app "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}" &&\
         docker push "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}" &&\
         if [ "${GITHUB_REF}" == "refs/heads/main" ]; then

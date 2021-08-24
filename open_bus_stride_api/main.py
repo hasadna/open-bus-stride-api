@@ -8,9 +8,10 @@ from .routers import rides
 from .routers import routes
 from .routers import route_stops
 from .routers import stops
+from .version import VERSION
 
 
-app = FastAPI()
+app = FastAPI(version=VERSION)
 
 
 @app.exception_handler(NoResultFound)

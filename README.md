@@ -28,6 +28,8 @@ venv/bin/pip install -r requirements-dev.txt
 
 ### Use
 
+Start the stride-db from open-bus-pipelines docker-compose environment
+
 Activate virtualenv
 
 ```
