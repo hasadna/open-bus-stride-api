@@ -11,7 +11,7 @@ from .routers import stops
 from .version import VERSION
 
 
-app = FastAPI(version=VERSION)
+app = FastAPI(version=VERSION, title='Open Bus Stride API')
 
 
 @app.exception_handler(NoResultFound)
