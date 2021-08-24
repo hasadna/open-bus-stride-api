@@ -1,0 +1,5 @@
+-r ../open-bus-stride-db/requirements.txt
+-e ../open-bus-stride-db
+
+-r requirements.txt
+-e .
