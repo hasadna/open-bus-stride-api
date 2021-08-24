@@ -2,7 +2,17 @@
 
 API For the Open Bus Stride project
 
+## Development using the Docker Compose environment
+
+This is the easiest option to start development, follow these instructions: https://github.com/hasadna/open-bus-pipelines/blob/main/README.md#stride-api
+
+For local development, see the additional functionality section: `Develop stride-api from a local clone`
+
 ## Local Development
+
+It's much easier to use the Docker Compose environment, but the following can be
+refferd to for more details regarding the internal processes and for development
+using your local Python interpreter. 
 
 ### Install
 
