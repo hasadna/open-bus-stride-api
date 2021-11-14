@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from sqlalchemy.exc import NoResultFound
 from fastapi.responses import JSONResponse
 
-from .routers import vehicle_locations
+from .routers import siri_vehicle_locations
 from .routers import siri_snapshots
 from .routers import rides
 from .routers import routes
@@ -19,7 +19,7 @@ def sqlalchemy_no_result_found_exception_handler(request: Request, exc: NoResult
     return JSONResponse(status_code=404, content={"message": str(exc)})
 
 
-app.include_router(vehicle_locations.router, prefix='/vehicle_locations')
+app.include_router(siri_vehicle_locations.router, prefix='/siri_vehicle_locations')
 app.include_router(siri_snapshots.router, prefix='/siri_snapshots')
 app.include_router(rides.router, prefix='/rides')
 app.include_router(routes.router, prefix='/routes')
