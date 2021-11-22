@@ -26,16 +26,24 @@ class SiriVehicleLocationPydanticModel(pydantic.BaseModel):
 
 @router.get("/list", tags=['siri_vehicle_locations'], response_model=typing.List[SiriVehicleLocationPydanticModel])
 def list_(limit: int = None, offset: int = None,
-          siri_snapshot_id: int = None, siri_ride_stop_id: int = None,
-          recorded_at_time_from: datetime.datetime = None, recorded_at_time_to: datetime.datetime = None):
+          siri_snapshot_ids: str = None, siri_ride_stop_ids: str = None,
+          recorded_at_time_from: datetime.datetime = None, recorded_at_time_to: datetime.datetime = None,
+          order_by: str = None):
+    """
+    * siri_snapshot_ids: comma-separated list
+    * siri_ride_stop_ids: comma-separated list
+    * recorded_at_time_from / recorded_at_time_to: YYYY-MM-DDTHH:MM:SS
+    * order_by: comma-separated list of order by fields, e.g.: "siri_snapshot_id desc,recorded_at_time asc"
+    """
     return common.get_list(
         SiriVehicleLocation, limit, offset,
         [
-            {'type': 'equals', 'field': SiriVehicleLocation.siri_snapshot_id, 'value': siri_snapshot_id},
-            {'type': 'equals', 'field': SiriVehicleLocation.siri_ride_stop_id, 'value': siri_ride_stop_id},
+            {'type': 'in', 'field': SiriVehicleLocation.siri_snapshot_id, 'value': siri_snapshot_ids},
+            {'type': 'in', 'field': SiriVehicleLocation.siri_ride_stop_id, 'value': siri_ride_stop_ids},
             {'type': 'datetime_from', 'field': SiriVehicleLocation.recorded_at_time, 'value': recorded_at_time_from},
             {'type': 'datetime_to', 'field': SiriVehicleLocation.recorded_at_time, 'value': recorded_at_time_to},
-        ]
+        ],
+        order_by=order_by
     )
 
 

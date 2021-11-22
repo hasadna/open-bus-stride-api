@@ -21,16 +21,27 @@ class SiriSnapshotPydanticModel(pydantic.BaseModel):
     error: str = None
     num_successful_parse_vehicle_locations: int = None
     num_failed_parse_vehicle_locations: int = None
+    num_added_siri_rides: int = None
+    num_added_siri_ride_stops: int = None
+    num_added_siri_routes: int = None
+    num_added_siri_stops: int = None
+    last_heartbeat: datetime.datetime = None
+    created_by: str = None
 
 
 @router.get("/list", tags=['siri_snapshots'], response_model=typing.List[SiriSnapshotPydanticModel])
 def list_(limit: int = None, offset: int = None,
-          snapshot_id_prefix: str = None):
+          snapshot_id_prefix: str = None,
+          order_by: str = None):
+    """
+    * order_by: comma-separated list of order by fields, e.g.: "snapshot_id desc,error asc"
+    """
     return common.get_list(
         SiriSnapshot, limit, offset,
         [
             {'type': 'prefix', 'field': SiriSnapshot.snapshot_id, 'value': snapshot_id_prefix},
-        ]
+        ],
+        order_by=order_by
     )
 
 
