@@ -32,7 +32,7 @@ def list_(limit: int = None, offset: int = None,
     """
     * siri_snapshot_ids: comma-separated list
     * siri_ride_stop_ids: comma-separated list
-    * recorded_at_time_from / recorded_at_time_to: YYYY-MM-DDTHH:MM:SS
+    * recorded_at_time_from / recorded_at_time_to: YYYY-MM-DDTHH:MM:SS+Z (e.g. 2021-11-33T55:48:49+00:00)
     * order_by: comma-separated list of order by fields, e.g.: "siri_snapshot_id desc,recorded_at_time asc"
     """
     return common.get_list(
