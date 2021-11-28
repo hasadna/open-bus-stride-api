@@ -18,6 +18,11 @@ class SiriRidePydanticModel(pydantic.BaseModel):
     journey_ref: str
     scheduled_start_time: datetime.datetime
     vehicle_ref: str = None
+    updated_first_last_vehicle_locations: datetime.datetime = None
+    first_vehicle_location_id: int = None
+    last_vehicle_location_id: int = None
+    updated_duration_minutes: datetime.datetime = None
+    duration_minutes: int = None
 
 
 @router.get("/list", tags=['siri_rides'], response_model=typing.List[SiriRidePydanticModel])
