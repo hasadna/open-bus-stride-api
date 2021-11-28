@@ -40,7 +40,7 @@ def list_(limit: int = None, offset: int = None,
     * siri_route_ids: comma-separated list
     * journey_refs: comma-separated list
     * vehicle_refs: comma-separated list
-    * scheduled_start_time_from / scheduled_start_time_to: YYYY-MM-DDTHH:MM:SS
+    * scheduled_start_time_from / scheduled_start_time_to: YYYY-MM-DDTHH:MM:SS+Z (e.g. 2021-11-33T55:48:49+00:00)
     * order_by: comma-separated list of order by fields, e.g.: "siri_route_id asc,vehicle_ref desc"
     """
     return common.get_list(
