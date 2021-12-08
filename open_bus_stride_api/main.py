@@ -1,4 +1,5 @@
 import importlib
+import traceback
 
 from fastapi import FastAPI, Request
 from sqlalchemy.exc import NoResultFound
@@ -14,6 +15,11 @@ app = FastAPI(version=VERSION, title='Open Bus Stride API')
 @app.exception_handler(NoResultFound)
 def sqlalchemy_no_result_found_exception_handler(request: Request, exc: NoResultFound):
     return JSONResponse(status_code=404, content={"message": str(exc)})
+
+
+@app.exception_handler(Exception)
+def generic_error_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content={"message": str(exc), "traceback": traceback.format_tb(exc.__traceback__)})
 
 
 for router_name in ROUTER_NAMES:
