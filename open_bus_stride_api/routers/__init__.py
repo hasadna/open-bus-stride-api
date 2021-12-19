@@ -7,8 +7,8 @@ ROUTER_NAMES = [
     'siri_vehicle_locations',
     'siri_snapshots',
 
-    'routes',
-    'stops',
-    'route_stops',
-    'rides',
+    # 'routes',
+    # 'stops',
+    # 'route_stops',
+    # 'rides',
 ]
