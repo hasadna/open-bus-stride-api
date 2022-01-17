@@ -26,7 +26,7 @@ class GtfsRoutePydanticModel(pydantic.BaseModel):
     route_type: str = None
 
 
-@router.get("/list", tags=['gtfs_routes'], response_model=typing.List[GtfsRoutePydanticModel])
+@router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsRoutePydanticModel])
 def list_(limit: int = None, offset: int = None,
           date_from: datetime.date = None, date_to: datetime.date = None,
           line_ref: int = None, operator_ref: int = None):
@@ -41,6 +41,6 @@ def list_(limit: int = None, offset: int = None,
     )
 
 
-@router.get('/get', tags=['gtfs_routes'], response_model=GtfsRoutePydanticModel)
+@router.get('/get', tags=['gtfs'], response_model=GtfsRoutePydanticModel)
 def get_(id: int):
     return common.get_item(GtfsRoute, GtfsRoute.id, id)

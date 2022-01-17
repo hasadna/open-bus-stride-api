@@ -17,7 +17,7 @@ class GtfsRidePydanticModel(pydantic.BaseModel):
     journey_ref: str
 
 
-@router.get("/list", tags=['gtfs_rides'], response_model=typing.List[GtfsRidePydanticModel])
+@router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsRidePydanticModel])
 def list_(limit: int = None, offset: int = None,
           gtfs_route_id: int = None, journey_ref_prefix: str = None):
     return common.get_list(
@@ -29,6 +29,6 @@ def list_(limit: int = None, offset: int = None,
     )
 
 
-@router.get('/get', tags=['gtfs_rides'], response_model=GtfsRidePydanticModel)
+@router.get('/get', tags=['gtfs'], response_model=GtfsRidePydanticModel)
 def get_(id: int):
     return common.get_item(GtfsRide, GtfsRide.id, id)

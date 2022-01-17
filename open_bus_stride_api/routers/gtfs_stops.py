@@ -22,7 +22,7 @@ class GtfsStopPydanticModel(pydantic.BaseModel):
     city: str = None
 
 
-@router.get("/list", tags=['gtfs_stops'], response_model=typing.List[GtfsStopPydanticModel])
+@router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsStopPydanticModel])
 def list_(limit: int = None, offset: int = None,
           date_from: datetime.date = None, date_to: datetime.date = None,
           code: int = None):
@@ -36,6 +36,6 @@ def list_(limit: int = None, offset: int = None,
     )
 
 
-@router.get('/get', tags=['gtfs_stops'], response_model=GtfsStopPydanticModel)
+@router.get('/get', tags=['gtfs'], response_model=GtfsStopPydanticModel)
 def get_(id: int):
     return common.get_item(GtfsStop, GtfsStop.id, id)

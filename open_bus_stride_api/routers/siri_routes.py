@@ -17,7 +17,7 @@ class SiriRoutePydanticModel(pydantic.BaseModel):
     operator_ref: int
 
 
-@router.get("/list", tags=['siri_routes'], response_model=typing.List[SiriRoutePydanticModel])
+@router.get("/list", tags=['siri'], response_model=typing.List[SiriRoutePydanticModel])
 def list_(limit: int = None, offset: int = None,
           line_refs: str = None, operator_refs: str = None,
           order_by: str = None):
@@ -38,6 +38,6 @@ def list_(limit: int = None, offset: int = None,
     )
 
 
-@router.get('/get', tags=['siri_routes'], response_model=SiriRoutePydanticModel)
+@router.get('/get', tags=['siri'], response_model=SiriRoutePydanticModel)
 def get_(id: int):
     return common.get_item(SiriRoute, SiriRoute.id, id)

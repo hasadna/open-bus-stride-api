@@ -25,7 +25,7 @@ class SiriRidePydanticModel(pydantic.BaseModel):
     duration_minutes: int = None
 
 
-@router.get("/list", tags=['siri_rides'], response_model=typing.List[SiriRidePydanticModel])
+@router.get("/list", tags=['siri'], response_model=typing.List[SiriRidePydanticModel])
 def list_(limit: int = None, offset: int = None,
           siri_route_ids: str = None,
           journey_ref_prefix: str = None,
@@ -57,6 +57,6 @@ def list_(limit: int = None, offset: int = None,
     )
 
 
-@router.get('/get', tags=['siri_rides'], response_model=SiriRidePydanticModel)
+@router.get('/get', tags=['siri'], response_model=SiriRidePydanticModel)
 def get_(id: int):
     return common.get_item(SiriRide, SiriRide.id, id)

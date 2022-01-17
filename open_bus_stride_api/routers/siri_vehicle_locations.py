@@ -24,7 +24,7 @@ class SiriVehicleLocationPydanticModel(pydantic.BaseModel):
     distance_from_journey_start: int
 
 
-@router.get("/list", tags=['siri_vehicle_locations'], response_model=typing.List[SiriVehicleLocationPydanticModel])
+@router.get("/list", tags=['siri'], response_model=typing.List[SiriVehicleLocationPydanticModel])
 def list_(limit: int = None, offset: int = None,
           siri_snapshot_ids: str = None, siri_ride_stop_ids: str = None,
           recorded_at_time_from: datetime.datetime = None, recorded_at_time_to: datetime.datetime = None,
@@ -47,6 +47,6 @@ def list_(limit: int = None, offset: int = None,
     )
 
 
-@router.get('/get', tags=['siri_vehicle_locations'], response_model=SiriVehicleLocationPydanticModel)
+@router.get('/get', tags=['siri'], response_model=SiriVehicleLocationPydanticModel)
 def get_(id: int):
     return common.get_item(SiriVehicleLocation, SiriVehicleLocation.id, id)

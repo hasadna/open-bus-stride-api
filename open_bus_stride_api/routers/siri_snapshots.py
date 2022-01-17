@@ -29,7 +29,7 @@ class SiriSnapshotPydanticModel(pydantic.BaseModel):
     created_by: str = None
 
 
-@router.get("/list", tags=['siri_snapshots'], response_model=typing.List[SiriSnapshotPydanticModel])
+@router.get("/list", tags=['siri'], response_model=typing.List[SiriSnapshotPydanticModel])
 def list_(limit: int = None, offset: int = None,
           snapshot_id_prefix: str = None,
           order_by: str = None):
@@ -45,6 +45,6 @@ def list_(limit: int = None, offset: int = None,
     )
 
 
-@router.get('/get', tags=['siri_snapshots'], response_model=SiriSnapshotPydanticModel)
+@router.get('/get', tags=['siri'], response_model=SiriSnapshotPydanticModel)
 def get_(id: int):
     return common.get_item(SiriSnapshot, SiriSnapshot.id, id)
