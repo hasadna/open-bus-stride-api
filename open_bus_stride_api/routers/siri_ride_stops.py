@@ -16,6 +16,7 @@ class SiriRideStopPydanticModel(pydantic.BaseModel):
     siri_stop_id: int
     siri_ride_id: int
     order: int
+    gtfs_stop_id: int
 
 
 @router.get("/list", tags=['siri'], response_model=typing.List[SiriRideStopPydanticModel])
