@@ -1,1 +1,1 @@
-docker.pkg.github.com/hasadna/open-bus-stride-db/open-bus-stride-db:e88c1442cf81b400d5261a7331b0104894877459
+docker.pkg.github.com/hasadna/open-bus-stride-db/open-bus-stride-db:4460224962734c1e9854ab8dcbb31f9e38a77f39
