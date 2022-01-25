@@ -74,6 +74,12 @@ def get_list_query_filter_prefix(session_query, filters, filter):
     return session_query
 
 
+def get_list_query_filter_contains(session_query, filters, filter):
+    if filter['value'] is not None:
+        session_query = session_query.filter(filter['field'].like('%{}%'.format(filter['value'])))
+    return session_query
+
+
 def get_list_query_filter_date_in_range(session_query, filters, filter):
     if filter['value'] is not None:
         min_field, max_field = filter['fields']
