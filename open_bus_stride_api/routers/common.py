@@ -1,18 +1,25 @@
+import pydantic
 import sqlalchemy
 
 from open_bus_stride_db.db import get_session
 
 
-def get_list(*args, **kwargs):
-    return [obj.__dict__ for obj in get_list_query(*args, **kwargs)]
+def get_list(*args, convert_to_dict=None, **kwargs):
+    if convert_to_dict is None:
+        return [obj.__dict__ for obj in get_list_query(*args, **kwargs)]
+    else:
+        return [convert_to_dict(obj) for obj in get_list_query(*args, **kwargs)]
 
 
 def get_list_query(db_model, limit, offset, filters=None, max_limit=1000,
-                   order_by=None, allowed_order_by_fields=None):
+                   order_by=None, allowed_order_by_fields=None,
+                   post_session_query_hook=None):
     if filters is None:
         filters = []
     with get_session() as session:
         session_query = session.query(db_model)
+        if post_session_query_hook:
+            session_query = post_session_query_hook(session_query)
         for filter in filters:
             session_query = globals()['get_list_query_filter_{}'.format(filter['type'])](session_query, filters, filter)
         if order_by:
@@ -90,3 +97,36 @@ def get_list_query_filter_date_in_range(session_query, filters, filter):
 def get_item(db_model, field, value):
     with get_session() as session:
         return session.query(db_model).filter(field == value).one().__dict__
+
+
+class PydanticRelatedModel():
+
+    def __init__(self, field_name_prefix, pydantic_model, exclude_field_names=None):
+        self.field_name_prefix = field_name_prefix
+        self.pydantic_model = pydantic_model
+        self.exclude_field_names = exclude_field_names
+
+    def update_create_model_kwargs(self, kwargs):
+        for name, field in self.pydantic_model.__fields__.items():
+            if self.exclude_field_names and name in self.exclude_field_names:
+                continue
+            default = field.default
+            if default is ...:
+                default = None
+            kwargs['{}{}'.format(self.field_name_prefix, name)] = (field.type_, default)
+
+    def add_orm_obj_to_dict_res(self, orm_obj, res):
+        if orm_obj:
+            for name in self.pydantic_model.__fields__.keys():
+                if self.exclude_field_names and name in self.exclude_field_names:
+                    continue
+                res['{}{}'.format(self.field_name_prefix, name)] = getattr(orm_obj, name)
+
+
+def pydantic_create_model_with_related(model_name, base_model, *related_models):
+    kwargs = {}
+    for name, field in base_model.__fields__.items():
+        kwargs[name] = (field.type_, field.default)
+    for related_model in related_models:
+        related_model.update_create_model_kwargs(kwargs)
+    return pydantic.create_model(model_name, **kwargs)
