@@ -22,14 +22,17 @@ class SiriVehicleLocationPydanticModel(pydantic.BaseModel):
     bearing: int
     velocity: int
     distance_from_journey_start: int
+    distance_from_siri_ride_stop_meters: typing.Optional[int]
 
 
 @router.get("/list", tags=['siri'], response_model=typing.List[SiriVehicleLocationPydanticModel])
 def list_(limit: int = None, offset: int = None,
+          siri_vehicle_location_ids: str = None,
           siri_snapshot_ids: str = None, siri_ride_stop_ids: str = None,
           recorded_at_time_from: datetime.datetime = None, recorded_at_time_to: datetime.datetime = None,
           order_by: str = None):
     """
+    * siri_vehicle_location_ids: comma-separated list
     * siri_snapshot_ids: comma-separated list
     * siri_ride_stop_ids: comma-separated list
     * recorded_at_time_from / recorded_at_time_to: YYYY-MM-DDTHH:MM:SS+Z (e.g. 2021-11-33T55:48:49+00:00)
@@ -38,6 +41,7 @@ def list_(limit: int = None, offset: int = None,
     return common.get_list(
         SiriVehicleLocation, limit, offset,
         [
+            {'type': 'in', 'field': SiriVehicleLocation.id, 'value': siri_vehicle_location_ids},
             {'type': 'in', 'field': SiriVehicleLocation.siri_snapshot_id, 'value': siri_snapshot_ids},
             {'type': 'in', 'field': SiriVehicleLocation.siri_ride_stop_id, 'value': siri_ride_stop_ids},
             {'type': 'datetime_from', 'field': SiriVehicleLocation.recorded_at_time, 'value': recorded_at_time_from},
