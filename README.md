@@ -40,7 +40,12 @@ venv/bin/pip install -r requirements-dev.txt
 
 ### Use
 
-Start the stride-db from open-bus-pipelines docker-compose environment
+You need a DB to connect to, there are 2 options here:
+
+* Start the stride-db from open-bus-pipelines docker-compose environment
+* Connect to the production DB using the Redash read-only credentials
+  * Create a `.env` file with the following, replacing the url to the production redash read-only url: `export SQLALCHEMY_URL=postgresql://postgres:123456@localhost`
+  * Source the .env: `. .env`
 
 Activate virtualenv
 
