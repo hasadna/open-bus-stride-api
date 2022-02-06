@@ -11,4 +11,5 @@ ROUTER_NAMES = [
     'gtfs_stops',
     'gtfs_rides',
     'gtfs_agencies',
+    'gtfs_ride_stops',
 ]
