@@ -60,3 +60,23 @@ uvicorn open_bus_stride_api.main:app --reload
 ```
 
 See the API docs at http://localhost:8000/docs
+
+### Manage APIs
+
+All existing APIs from the docs are defined under ```open_bus_stride_api/routers/<base_router_name>.py```
+
+Follow this example to create or edit a simple API for a specific table with filters: 
+
+
+```
+@router.<http_method>("/<api_path>", tags=[<file_name>], response_model=<pydantic_response_model>) // 
+def name(<filtering_params>, limit, offset): # always include limit & offest to allow easy iteration on the data
+    return common.get_list(
+        <db_model>, limit, offset,
+        [   
+            {'type': <filter_type>, 'field': <db_stcruct>.<specific_id>, 'value': <filter_param>},
+        ]
+    )
+```
+
+Filter types are defined at ```open_bus_stride_api/routers/common.py -> get_list_query_filter_<filter_type>``` (e.g.: 'equal', 'date_in_range')

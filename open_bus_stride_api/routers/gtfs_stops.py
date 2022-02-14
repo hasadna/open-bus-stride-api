@@ -25,13 +25,14 @@ class GtfsStopPydanticModel(pydantic.BaseModel):
 @router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsStopPydanticModel])
 def list_(limit: int = None, offset: int = None,
           date_from: datetime.date = None, date_to: datetime.date = None,
-          code: int = None):
+          code: int = None, city: str = None):
     return common.get_list(
         GtfsStop, limit, offset,
         [
             {'type': 'datetime_from', 'field': GtfsStop.date, 'value': date_from},
             {'type': 'datetime_to', 'field': GtfsStop.date, 'value': date_to},
             {'type': 'equals', 'field': GtfsStop.code, 'value': code},
+            {'type': 'equals', 'field': GtfsStop.city, 'value': city},
         ]
     )
 

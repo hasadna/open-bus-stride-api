@@ -64,7 +64,10 @@ def list_(limit: int = None, offset: int = None,
           siri_vehicle_location_ids: str = None,
           siri_snapshot_ids: str = None, siri_ride_stop_ids: str = None,
           recorded_at_time_from: datetime.datetime = None, recorded_at_time_to: datetime.datetime = None,
-          order_by: str = None, siri_routes__line_ref: str = None):
+          order_by: str = None, siri_routes__line_ref: str = None, siri_routes__operator_ref: str = None,
+          siri_rides__schedualed_start_time_from: datetime.datetime = None,
+          siri_rides__schedualed_start_time_to: datetime.datetime = None,
+          ):
     """
     * siri_vehicle_location_ids: comma-separated list
     * siri_snapshot_ids: comma-separated list
@@ -76,6 +79,9 @@ def list_(limit: int = None, offset: int = None,
         SiriVehicleLocation, limit, offset,
         [
             {'type': 'equals', 'field': model.SiriRoute.line_ref, 'value': siri_routes__line_ref},
+            {'type': 'equals', 'field': model.SiriRoute.operator_ref, 'value': siri_routes__operator_ref},
+            {'type': 'datetime_to', 'field': model.SiriRide.scheduled_start_time, 'value': siri_rides__schedualed_start_time_to},
+            {'type': 'datetime_from', 'field': model.SiriRide.scheduled_start_time, 'value': siri_rides__schedualed_start_time_from},
             {'type': 'in', 'field': SiriVehicleLocation.id, 'value': siri_vehicle_location_ids},
             {'type': 'in', 'field': SiriVehicleLocation.siri_snapshot_id, 'value': siri_snapshot_ids},
             {'type': 'in', 'field': SiriVehicleLocation.siri_ride_stop_id, 'value': siri_ride_stop_ids},
