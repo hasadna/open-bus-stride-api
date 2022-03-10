@@ -101,13 +101,16 @@ def get_item(db_model, field, value):
 
 class PydanticRelatedModel():
 
-    def __init__(self, field_name_prefix, pydantic_model, exclude_field_names=None):
+    def __init__(self, field_name_prefix, pydantic_model, exclude_field_names=None, include_field_names=None):
         self.field_name_prefix = field_name_prefix
         self.pydantic_model = pydantic_model
         self.exclude_field_names = exclude_field_names
+        self.include_field_names = include_field_names
 
     def update_create_model_kwargs(self, kwargs):
         for name, field in self.pydantic_model.__fields__.items():
+            if self.include_field_names and name not in self.include_field_names:
+                continue
             if self.exclude_field_names and name in self.exclude_field_names:
                 continue
             default = field.default
