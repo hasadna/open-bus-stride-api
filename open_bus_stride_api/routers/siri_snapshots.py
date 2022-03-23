@@ -29,22 +29,29 @@ class SiriSnapshotPydanticModel(pydantic.BaseModel):
     created_by: str = None
 
 
-@router.get("/list", tags=['siri'], response_model=typing.List[SiriSnapshotPydanticModel])
-def list_(limit: int = None, offset: int = None,
-          snapshot_id_prefix: str = None,
-          order_by: str = None):
-    """
-    * order_by: comma-separated list of order by fields, e.g.: "snapshot_id desc,error asc"
-    """
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'siri snapshot'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'siri'
+PYDANTIC_MODEL = SiriSnapshotPydanticModel
+SQL_MODEL = SiriSnapshot
+
+
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          snapshot_id_prefix: str = common.param_filter_prefix('snapshot id'),
+          order_by: str = common.param_order_by()):
     return common.get_list(
         SiriSnapshot, limit, offset,
         [
             {'type': 'prefix', 'field': SiriSnapshot.snapshot_id, 'value': snapshot_id_prefix},
         ],
-        order_by=order_by
+        order_by=order_by,
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['siri'], response_model=SiriSnapshotPydanticModel)
-def get_(id: int):
-    return common.get_item(SiriSnapshot, SiriSnapshot.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

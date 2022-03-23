@@ -16,23 +16,29 @@ class SiriStopPydanticModel(pydantic.BaseModel):
     code: int
 
 
-@router.get("/list", tags=['siri'], response_model=typing.List[SiriStopPydanticModel])
-def list_(limit: int = None, offset: int = None,
-          codes: str = None,
-          order_by: str = None):
-    """
-    * codes: comma-separated list
-    * order_by: comma-separated list of order by fields, e.g.: "code asc"
-    """
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'siri stop'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'siri'
+PYDANTIC_MODEL = SiriStopPydanticModel
+SQL_MODEL = SiriStop
+
+
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          codes: str = common.param_filter_list('stop code'),
+          order_by: str = common.param_order_by()):
     return common.get_list(
         SiriStop, limit, offset,
         [
             {'type': 'in', 'field': SiriStop.code, 'value': codes},
         ],
-        order_by=order_by
+        order_by=order_by,
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['siri'], response_model=SiriStopPydanticModel)
-def get_(id: int):
-    return common.get_item(SiriStop, SiriStop.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

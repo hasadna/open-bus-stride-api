@@ -27,6 +27,15 @@ class SiriVehicleLocationPydanticModel(pydantic.BaseModel):
     distance_from_journey_start: int
     distance_from_siri_ride_stop_meters: typing.Optional[int]
 
+
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'siri vehicle location'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'siri'
+PYDANTIC_MODEL = SiriVehicleLocationPydanticModel
+SQL_MODEL = model.SiriVehicleLocation
+
+
 siri_route_related_model = common.PydanticRelatedModel(
     'siri_route__', siri_routes.SiriRoutePydanticModel
 )
@@ -70,23 +79,22 @@ def _convert_to_dict(obj: model.SiriVehicleLocation):
     siri_ride_related_model.add_orm_obj_to_dict_res(siri_ride, res)
     return res
 
-@router.get("/list", tags=['siri'], response_model=typing.List[SiriVehicleLocationWithRelatedPydanticModel])
-def list_(limit: int = None, offset: int = None,
-          siri_vehicle_location_ids: str = None,
-          siri_snapshot_ids: str = None, siri_ride_stop_ids: str = None,
-          recorded_at_time_from: datetime.datetime = None, recorded_at_time_to: datetime.datetime = None,
-          order_by: str = None, siri_routes__line_ref: str = None, siri_routes__operator_ref: str = None,
-          siri_rides__schedualed_start_time_from: datetime.datetime = None,
-          siri_rides__schedualed_start_time_to: datetime.datetime = None,
-          siri_rides__ids: str = None, siri_routes__ids: str = None,
+@common.router_list(router, TAG, SiriVehicleLocationWithRelatedPydanticModel, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          siri_vehicle_location_ids: str = common.param_filter_list('siri vehicle location id'),
+          siri_snapshot_ids: str = common.param_filter_list('siri snapshot id'),
+          siri_ride_stop_ids: str = common.param_filter_list('siri ride stop id'),
+          recorded_at_time_from: datetime.datetime = common.param_filter_datetime_from('recorded at time'),
+          recorded_at_time_to: datetime.datetime = common.param_filter_datetime_to('recorded at time'),
+          order_by: str = common.param_order_by(),
+          siri_routes__line_ref: str = common.param_filter_equals('siri route line ref'),
+          siri_routes__operator_ref: str = common.param_filter_equals('siri route operator ref'),
+          siri_rides__schedualed_start_time_from: datetime.datetime = common.param_filter_datetime_from('siri ride scheduled start time'),
+          siri_rides__schedualed_start_time_to: datetime.datetime = common.param_filter_datetime_to('siri ride scheduled start time'),
+          siri_rides__ids: str = common.param_filter_list('siri ride id'),
+          siri_routes__ids: str = common.param_filter_list('siri route id'),
           ):
-    """
-    * siri_vehicle_location_ids: comma-separated list
-    * siri_snapshot_ids: comma-separated list
-    * siri_ride_stop_ids: comma-separated list
-    * recorded_at_time_from / recorded_at_time_to: YYYY-MM-DDTHH:MM:SS+Z (e.g. 2021-11-33T55:48:49+00:00)
-    * order_by: comma-separated list of order by fields, e.g.: "siri_snapshot_id desc,recorded_at_time asc"
-    """
     return common.get_list(
         SiriVehicleLocation, limit, offset,
         [
@@ -105,10 +113,10 @@ def list_(limit: int = None, offset: int = None,
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
         convert_to_dict=_convert_to_dict,
-        max_limit=100
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['siri'], response_model=SiriVehicleLocationPydanticModel)
-def get_(id: int):
-    return common.get_item(SiriVehicleLocation, SiriVehicleLocation.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

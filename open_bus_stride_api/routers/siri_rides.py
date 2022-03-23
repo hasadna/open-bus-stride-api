@@ -1,4 +1,3 @@
-import typing
 import datetime
 
 import pydantic
@@ -29,32 +28,32 @@ class SiriRidePydanticModel(pydantic.BaseModel):
     gtfs_ride_id: int = None
 
 
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'siri ride'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'siri'
+PYDANTIC_MODEL = SiriRidePydanticModel
+SQL_MODEL = model.SiriRide
+
+
 def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
     return session_query.join(model.SiriRoute, model.SiriRoute.id == model.SiriRide.siri_route_id)
 
 
-@router.get("/list", tags=['siri'], response_model=typing.List[SiriRidePydanticModel])
-def list_(limit: int = None, offset: int = None,
-          siri_route_ids: str = None, siri_route__line_refs: str = None, siri_route__operator_refs: str = None,
-          journey_ref_prefix: str = None,
-          journey_refs: str = None,
-          vehicle_refs: str = None,
-          scheduled_start_time_from: datetime.datetime = None,
-          scheduled_start_time_to: datetime.datetime = None,
-          order_by: str = None):
-    """
-    * limit: limit the number of results, if not specified will limit to 1000 results
-    * offset: row number to start returning results from (for pagination)
-    * siri_route_ids: comma-separated list
-    * siri_route__line_refs: comma-separated list
-    * siri_route__operator_refs: comma-separated list
-    * journey_refs: comma-separated list
-    * vehicle_refs: comma-separated list
-    * scheduled_start_time_from / scheduled_start_time_to: YYYY-MM-DDTHH:MM:SS+Z (e.g. 2021-11-33T55:48:49+00:00)
-    * order_by: comma-separated list of order by fields, e.g.: "siri_route_id asc,vehicle_ref desc"
-    """
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(max_limit=LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          siri_route_ids: str = common.param_filter_list('siri route ids'),
+          siri_route__line_refs: str = common.param_filter_list('siri route line refs'),
+          siri_route__operator_refs: str = common.param_filter_list('siri route operator refs'),
+          journey_ref_prefix: str = common.param_filter_prefix('journey ref'),
+          journey_refs: str = common.param_filter_list('journey ref'),
+          vehicle_refs: str = common.param_filter_list('vehicle ref'),
+          scheduled_start_time_from: datetime.datetime = common.param_filter_datetime_from('scheduled start time'),
+          scheduled_start_time_to: datetime.datetime = common.param_filter_datetime_to('scheduled start time'),
+          order_by: str = common.param_order_by('siri_route_id asc,vehicle_ref desc')):
     return common.get_list(
-        model.SiriRide, limit, offset,
+        SQL_MODEL, limit, offset,
         [
             {'type': 'in', 'field': model.SiriRide.siri_route_id, 'value': siri_route_ids},
             {'type': 'in', 'field': model.SiriRoute.line_ref, 'value': siri_route__line_refs},
@@ -66,10 +65,11 @@ def list_(limit: int = None, offset: int = None,
             {'type': 'datetime_to', 'field': model.SiriRide.scheduled_start_time, 'value': scheduled_start_time_to},
         ],
         order_by=order_by,
-        post_session_query_hook=_post_session_query_hook
+        post_session_query_hook=_post_session_query_hook,
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['siri'], response_model=SiriRidePydanticModel)
-def get_(id: int):
-    return common.get_item(model.SiriRide, model.SiriRide.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

@@ -24,18 +24,29 @@ class GtfsRideStopPydanticModel(pydantic.BaseModel):
     shape_dist_traveled: int = None
 
 
-@router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsRideStopPydanticModel])
-def list_(limit: int = None, offset: int = None,
-          gtfs_stop_ids: str = None, gtfs_ride_ids: str = None):
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'gtfs ride stop'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'gtfs'
+PYDANTIC_MODEL = GtfsRideStopPydanticModel
+SQL_MODEL = model.GtfsRideStop
+
+
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          gtfs_stop_ids: str = common.param_filter_list('gtfs stop id'),
+          gtfs_ride_ids: str = common.param_filter_list('gtfs ride id')):
     return common.get_list(
         model.GtfsRideStop, limit, offset,
         [
             {'type': 'in', 'field': model.GtfsRideStop.gtfs_stop_id, 'value': gtfs_stop_ids},
             {'type': 'in', 'field': model.GtfsRideStop.gtfs_ride_id, 'value': gtfs_ride_ids},
-        ]
+        ],
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['gtfs'], response_model=GtfsRideStopPydanticModel)
-def get_(id: int):
-    return common.get_item(model.GtfsRideStop, model.GtfsRideStop.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

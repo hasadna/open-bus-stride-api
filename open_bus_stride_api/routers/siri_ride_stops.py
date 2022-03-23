@@ -22,6 +22,14 @@ class SiriRideStopPydanticModel(pydantic.BaseModel):
     nearest_siri_vehicle_location_id: int = None
 
 
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'siri ride stop'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'siri'
+PYDANTIC_MODEL = SiriRideStopPydanticModel
+SQL_MODEL = model.SiriRideStop
+
+
 siri_stop_related_model = common.PydanticRelatedModel(
     'siri_stop__', siri_stops.SiriStopPydanticModel, ['id']
 )
@@ -83,16 +91,12 @@ def _convert_to_dict(obj: model.SiriRideStop):
     return res
 
 
-@router.get("/list", tags=['siri'], response_model=typing.List[SiriRideStopWithRelatedPydanticModel])
-def list_(limit: int = None, offset: int = None,
-          siri_stop_ids: str = None,
-          siri_ride_ids: str = None,
-          order_by: str = None):
-    """
-    * siri_stop_ids: comma-separated list
-    * siri_ride_ids: comma-separated list
-    * order_by: comma-separated list of order by fields, e.g.: "order asc,siri_stop_id desc"
-    """
+@common.router_list(router, TAG, SiriRideStopWithRelatedPydanticModel, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          siri_stop_ids: str = common.param_filter_list('siri stop id'),
+          siri_ride_ids: str = common.param_filter_list('siri ride id'),
+          order_by: str = common.param_order_by()):
     return common.get_list(
         model.SiriRideStop, limit, offset,
         [
@@ -101,10 +105,11 @@ def list_(limit: int = None, offset: int = None,
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
-        convert_to_dict=_convert_to_dict
+        convert_to_dict=_convert_to_dict,
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['siri'], response_model=SiriRideStopPydanticModel)
-def get_(id: int):
-    return common.get_item(model.SiriRideStop, model.SiriRideStop.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

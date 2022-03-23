@@ -26,32 +26,29 @@ class GtfsRoutePydanticModel(pydantic.BaseModel):
     route_type: str = None
 
 
-@router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsRoutePydanticModel])
-def list_(limit: int = None, offset: int = None,
-          date_from: datetime.date = None, date_to: datetime.date = None,
-          line_refs: str = None, operator_refs: str = None,
-          route_short_name: str = None,
-          route_long_name_contains: str = None,
-          route_mkt: str = None,
-          route_direction: str = None,
-          route_alternative: str = None,
-          agency_name: str = None,
-          route_type: str = None,
-          order_by: str = None):
-    """
-    * limit: limit the number of results, if not specified will limit to 1000 results
-    * offset: row number to start returning results from (for pagination)
-    * line_refs: comma-separated list
-    * operator_refs: comma-separated list
-    * route_short_name: string, exact match
-    * route_long_name_contains: string, contains
-    * route_mkt: string, exact match
-    * route_direction: string, exact match
-    * route_alternative: string, exact match
-    * agency_name: string, exact match
-    * route_type: string, exact match
-    * order_by: comma-separated list of order by fields, e.g.: "line_ref desc,operator_ref asc"
-    """
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'gtfs route'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'gtfs'
+PYDANTIC_MODEL = GtfsRoutePydanticModel
+SQL_MODEL = GtfsRoute
+
+
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          date_from: datetime.date = common.param_filter_date_from('date'),
+          date_to: datetime.date = common.param_filter_date_to('date'),
+          line_refs: str = common.param_filter_list('line ref'),
+          operator_refs: str = common.param_filter_list('operator ref'),
+          route_short_name: str = common.param_filter_equals('route short name'),
+          route_long_name_contains: str = common.param_filter_contains('route long name'),
+          route_mkt: str = common.param_filter_equals('route mkt'),
+          route_direction: str = common.param_filter_equals('route direction'),
+          route_alternative: str = common.param_filter_equals('route alternative'),
+          agency_name: str = common.param_filter_equals('agency name'),
+          route_type: str = common.param_filter_equals('route type'),
+          order_by: str = common.param_order_by()):
     return common.get_list(
         GtfsRoute, limit, offset,
         [
@@ -67,10 +64,11 @@ def list_(limit: int = None, offset: int = None,
             {'type': 'equals', 'field': GtfsRoute.agency_name, 'value': agency_name},
             {'type': 'equals', 'field': GtfsRoute.route_type, 'value': route_type},
         ],
-        order_by=order_by
+        order_by=order_by,
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['gtfs'], response_model=GtfsRoutePydanticModel)
-def get_(id: int):
-    return common.get_item(GtfsRoute, GtfsRoute.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

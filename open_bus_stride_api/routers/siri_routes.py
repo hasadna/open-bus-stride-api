@@ -1,5 +1,3 @@
-import typing
-
 import pydantic
 from fastapi import APIRouter
 
@@ -17,27 +15,31 @@ class SiriRoutePydanticModel(pydantic.BaseModel):
     operator_ref: int
 
 
-@router.get("/list", tags=['siri'], response_model=typing.List[SiriRoutePydanticModel])
-def list_(limit: int = None, offset: int = None,
-          line_refs: str = None, operator_refs: str = None,
-          order_by: str = None):
-    """
-    * limit: limit the number of results, if not specified will limit to 1000 results
-    * offset: row number to start returning results from (for pagination)
-    * line_refs: comma-separated list
-    * operator_refs: comma-separated list
-    * order_by: comma-separated list of order by fields, e.g.: "line_ref desc,operator_ref asc"
-    """
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'siri route'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'siri'
+PYDANTIC_MODEL = SiriRoutePydanticModel
+SQL_MODEL = SiriRoute
+
+
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          line_refs: str = common.param_filter_list('line ref'),
+          operator_refs: str = common.param_filter_list('operator ref'),
+          order_by: str = common.param_order_by()):
     return common.get_list(
-        SiriRoute, limit, offset,
+        SQL_MODEL, limit, offset,
         [
             {'type': 'in', 'field': SiriRoute.line_ref, 'value': line_refs},
             {'type': 'in', 'field': SiriRoute.operator_ref, 'value': operator_refs},
         ],
-        order_by=order_by
+        order_by=order_by,
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['siri'], response_model=SiriRoutePydanticModel)
-def get_(id: int):
-    return common.get_item(SiriRoute, SiriRoute.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)

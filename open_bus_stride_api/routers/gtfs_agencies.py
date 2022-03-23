@@ -1,4 +1,3 @@
-import typing
 import datetime
 from textwrap import dedent
 
@@ -6,6 +5,8 @@ import pydantic
 from fastapi import APIRouter
 
 from open_bus_stride_db.db import get_session
+
+from . import common
 
 
 router = APIRouter()
@@ -17,12 +18,22 @@ class GtfsAgencyPydanticModel(pydantic.BaseModel):
     agency_name: str
 
 
-@router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsAgencyPydanticModel])
-def list_(limit: int = None, offset: int = None,
-          date_from: datetime.date = None, date_to: datetime.date = None):
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'gtfs agency'
+WHAT_PLURAL = 'gtfs agencies'
+TAG = 'gtfs'
+PYDANTIC_MODEL = GtfsAgencyPydanticModel
+
+
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          date_from: datetime.date = common.param_filter_date_from('date'),
+          date_to: datetime.date = common.param_filter_date_to('date')):
     with get_session() as session:
-        if not limit or limit > 1000:
-            limit = 1000
+        if not limit:
+            limit = LIST_MAX_LIMIT
+        assert limit <= LIST_MAX_LIMIT, f'max allowed limit is {LIST_MAX_LIMIT}'
         if not offset:
             offset = 0
         res = []

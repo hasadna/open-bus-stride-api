@@ -22,10 +22,21 @@ class GtfsStopPydanticModel(pydantic.BaseModel):
     city: str = None
 
 
-@router.get("/list", tags=['gtfs'], response_model=typing.List[GtfsStopPydanticModel])
-def list_(limit: int = None, offset: int = None,
-          date_from: datetime.date = None, date_to: datetime.date = None,
-          code: int = None, city: str = None):
+LIST_MAX_LIMIT = 100
+WHAT_SINGULAR = 'gtfs stop'
+WHAT_PLURAL = f'{WHAT_SINGULAR}s'
+TAG = 'gtfs'
+PYDANTIC_MODEL = GtfsStopPydanticModel
+SQL_MODEL = GtfsStopPydanticModel
+
+
+@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
+def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+          offset: int = common.param_offset(),
+          date_from: datetime.date = common.param_filter_date_from('date'),
+          date_to: datetime.date = common.param_filter_date_to('date'),
+          code: int = common.param_filter_equals('code'),
+          city: str = common.param_filter_equals('city')):
     return common.get_list(
         GtfsStop, limit, offset,
         [
@@ -33,10 +44,11 @@ def list_(limit: int = None, offset: int = None,
             {'type': 'datetime_to', 'field': GtfsStop.date, 'value': date_to},
             {'type': 'equals', 'field': GtfsStop.code, 'value': code},
             {'type': 'equals', 'field': GtfsStop.city, 'value': city},
-        ]
+        ],
+        max_limit=LIST_MAX_LIMIT
     )
 
 
-@router.get('/get', tags=['gtfs'], response_model=GtfsStopPydanticModel)
-def get_(id: int):
-    return common.get_item(GtfsStop, GtfsStop.id, id)
+@common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
+def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
+    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)
