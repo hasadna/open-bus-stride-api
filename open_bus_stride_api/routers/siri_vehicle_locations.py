@@ -56,10 +56,10 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
         .add_entity(model.SiriSnapshot)
         .add_entity(model.SiriRide)
         .add_entity(model.SiriRoute)
-        .join(model.SiriRideStop)
-        .join(model.SiriRide)
+        .join(model.SiriRideStop, model.SiriRideStop.id == model.SiriVehicleLocation.siri_ride_stop_id)
+        .join(model.SiriRide, model.SiriRide.id == model.SiriRideStop.siri_ride_id)
         .join(model.SiriRoute, model.SiriRoute.id == model.SiriRide.siri_route_id)
-        .join(model.SiriSnapshot)
+        .join(model.SiriSnapshot, model.SiriSnapshot.id == model.SiriVehicleLocation.siri_snapshot_id)
     )
 
 def _convert_to_dict(obj: model.SiriVehicleLocation):
