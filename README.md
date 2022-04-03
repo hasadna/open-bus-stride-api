@@ -2,6 +2,9 @@
 
 API For the Open Bus Stride project
 
+* Please report issues and feature requests [here](https://github.com/hasadna/open-bus/issues/new)
+* To get updates about the system status and for general help join Hasadna's Slack #open-bus channel ([Hasadna Slack signup link](https://join.slack.com/t/hasadna/shared_invite/zt-167h764cg-J18ZcY1odoitq978IyMMig))
+
 See [our contributing docs](https://github.com/hasadna/open-bus-pipelines/blob/main/CONTRIBUTING.md) if you want to suggest changes to this repository.
 
 ## Development using the Docker Compose environment
