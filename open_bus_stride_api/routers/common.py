@@ -16,7 +16,7 @@ def get_list(*args, convert_to_dict=None, **kwargs):
 
 
 def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100,
-                   order_by=None, allowed_order_by_fields=None,
+                   order_by=None,
                    post_session_query_hook=None):
     if not limit and max_limit:
         limit = max_limit
@@ -28,8 +28,9 @@ def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100
         session_query = post_session_query_hook(session_query)
     for filter in filters:
         session_query = globals()['get_list_query_filter_{}'.format(filter['type'])](session_query, filters, filter)
+    order_by_args = []
+    order_by_has_id_field = False
     if order_by:
-        order_by_args = []
         for ob in order_by.split(','):
             ob = ob.strip()
             if not ob:
@@ -40,9 +41,12 @@ def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100
                 direction = None
             else:
                 field_name, direction = ob
-            assert not allowed_order_by_fields or field_name in allowed_order_by_fields, 'field name is not in allowed order_by fields: {}'.format(field_name)
+            if field_name.lower() == 'id':
+                order_by_has_id_field = True
             order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
-        session_query = session_query.order_by(*order_by_args)
+    if not order_by_has_id_field:
+        order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
+    session_query = session_query.order_by(*order_by_args)
     if limit:
         session_query = session_query.limit(limit)
     if offset:
@@ -181,8 +185,11 @@ def param_filter_date_to(what_singular):
     return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".')
 
 
-def param_order_by(example='field_one asc,field_two desc'):
-    return fastapi.Query(None, description=f'Order of the results. Comma-separated list of fields and direction, e.g.: "{example}"')
+def param_order_by(default='id asc'):
+    return fastapi.Query(
+        default,
+        description=f'Order of the results. Comma-separated list of fields and direction. e.g. "field1 asc,field2 desc".'
+    )
 
 
 def router_list(router, tag, pydantic_model, what_plural):
