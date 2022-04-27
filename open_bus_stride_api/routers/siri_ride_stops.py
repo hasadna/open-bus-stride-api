@@ -1,4 +1,4 @@
-import typing
+import datetime
 
 import pydantic
 from fastapi import APIRouter
@@ -96,12 +96,31 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           siri_stop_ids: str = common.param_filter_list('siri stop id'),
           siri_ride_ids: str = common.param_filter_list('siri ride id'),
-          order_by: str = common.param_order_by()):
+          siri_vehicle_location__lon__greater_or_equal: float = common.param_filter_greater_or_equal(
+              'siri vehicle location lon', 34.808),
+          siri_vehicle_location__lon__lower_or_equal: float = common.param_filter_lower_or_equal(
+              'siri vehicle location lon', 34.808),
+          siri_vehicle_location__lat__greater_or_equal: float = common.param_filter_greater_or_equal(
+              'siri vehicle location lat', 31.961),
+          siri_vehicle_location__lat__lower_or_equal: float = common.param_filter_lower_or_equal(
+              'siri vehicle location lat', 31.961),
+          siri_vehicle_location__recorded_at_time_from: datetime.datetime = common.param_filter_datetime_from(
+              'siri vehicle location recorded at time'),
+          siri_vehicle_location__recorded_at_time_to: datetime.datetime = common.param_filter_datetime_to(
+              'siri vehicle location recorded at time'),
+          order_by: str = common.param_order_by(),
+          ):
     return common.get_list(
         model.SiriRideStop, limit, offset,
         [
             {'type': 'in', 'field': model.SiriRideStop.siri_stop_id, 'value': siri_stop_ids},
             {'type': 'in', 'field': model.SiriRideStop.siri_ride_id, 'value': siri_ride_ids},
+            {'type': 'greater_or_equal', 'field': model.SiriVehicleLocation.lon, 'value': siri_vehicle_location__lon__greater_or_equal},
+            {'type': 'lower_or_equal', 'field': model.SiriVehicleLocation.lon, 'value': siri_vehicle_location__lon__lower_or_equal},
+            {'type': 'greater_or_equal', 'field': model.SiriVehicleLocation.lat, 'value': siri_vehicle_location__lat__greater_or_equal},
+            {'type': 'lower_or_equal', 'field': model.SiriVehicleLocation.lat, 'value': siri_vehicle_location__lat__lower_or_equal},
+            {'type': 'datetime_from', 'field': model.SiriVehicleLocation.recorded_at_time, 'value': siri_vehicle_location__recorded_at_time_from},
+            {'type': 'datetime_to', 'field': model.SiriVehicleLocation.recorded_at_time, 'value': siri_vehicle_location__recorded_at_time_to},
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,

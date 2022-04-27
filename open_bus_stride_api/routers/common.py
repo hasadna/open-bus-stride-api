@@ -102,6 +102,18 @@ def get_list_query_filter_date_in_range(session_query, filters, filter):
     return session_query
 
 
+def get_list_query_filter_greater_or_equal(session_query, filters, filter):
+    if filter['value'] is not None:
+        session_query = session_query.filter(filter['field'] >= float(filter['value']))
+    return session_query
+
+
+def get_list_query_filter_lower_or_equal(session_query, filters, filter):
+    if filter['value'] is not None:
+        session_query = session_query.filter(filter['field'] <= float(filter['value']))
+    return session_query
+
+
 def get_item(db_model, field, value):
     with get_session() as session:
         return session.query(db_model).filter(field == value).one().__dict__
@@ -183,6 +195,14 @@ def param_filter_date_from(what_singular):
 
 def param_filter_date_to(what_singular):
     return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".')
+
+
+def param_filter_greater_or_equal(what_singular, example):
+    return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have a numeric value greater than or equal to given value. Example value: {example}')
+
+
+def param_filter_lower_or_equal(what_singular, example):
+    return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value. Example value: {example}')
 
 
 def param_order_by(default='id asc'):
