@@ -33,6 +33,7 @@ SQL_MODEL = GtfsStopPydanticModel
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
+          get_count: bool = common.param_get_count(),
           date_from: datetime.date = common.param_filter_date_from('date'),
           date_to: datetime.date = common.param_filter_date_to('date'),
           code: int = common.param_filter_equals('code'),
@@ -45,7 +46,8 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'equals', 'field': GtfsStop.code, 'value': code},
             {'type': 'equals', 'field': GtfsStop.city, 'value': city},
         ],
-        max_limit=LIST_MAX_LIMIT
+        max_limit=LIST_MAX_LIMIT,
+        get_count=get_count,
     )
 
 

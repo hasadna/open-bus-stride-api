@@ -37,6 +37,7 @@ SQL_MODEL = GtfsRoute
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
+          get_count: bool = common.param_get_count(),
           date_from: datetime.date = common.param_filter_date_from('date'),
           date_to: datetime.date = common.param_filter_date_to('date'),
           line_refs: str = common.param_filter_list('line ref'),
@@ -65,7 +66,8 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'equals', 'field': GtfsRoute.route_type, 'value': route_type},
         ],
         order_by=order_by,
-        max_limit=LIST_MAX_LIMIT
+        max_limit=LIST_MAX_LIMIT,
+        get_count=get_count,
     )
 
 

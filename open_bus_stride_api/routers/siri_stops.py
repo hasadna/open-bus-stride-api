@@ -27,6 +27,7 @@ SQL_MODEL = SiriStop
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
+          get_count: bool = common.param_get_count(),
           codes: str = common.param_filter_list('stop code'),
           order_by: str = common.param_order_by()):
     return common.get_list(
@@ -35,7 +36,8 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'in', 'field': SiriStop.code, 'value': codes},
         ],
         order_by=order_by,
-        max_limit=LIST_MAX_LIMIT
+        max_limit=LIST_MAX_LIMIT,
+        get_count=get_count,
     )
 
 

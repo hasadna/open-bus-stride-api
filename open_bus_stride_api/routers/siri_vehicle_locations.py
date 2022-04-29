@@ -82,6 +82,7 @@ def _convert_to_dict(obj: model.SiriVehicleLocation):
 @common.router_list(router, TAG, SiriVehicleLocationWithRelatedPydanticModel, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
+          get_count: bool = common.param_get_count(),
           siri_vehicle_location_ids: str = common.param_filter_list('siri vehicle location id'),
           siri_snapshot_ids: str = common.param_filter_list('siri snapshot id'),
           siri_ride_stop_ids: str = common.param_filter_list('siri ride stop id'),
@@ -121,7 +122,8 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
         convert_to_dict=_convert_to_dict,
-        max_limit=LIST_MAX_LIMIT
+        max_limit=LIST_MAX_LIMIT,
+        get_count=get_count,
     )
 
 

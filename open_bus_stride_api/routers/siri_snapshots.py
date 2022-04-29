@@ -40,6 +40,7 @@ SQL_MODEL = SiriSnapshot
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
+          get_count: bool = common.param_get_count(),
           snapshot_id_prefix: str = common.param_filter_prefix('snapshot id'),
           order_by: str = common.param_order_by()):
     return common.get_list(
@@ -48,7 +49,8 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'prefix', 'field': SiriSnapshot.snapshot_id, 'value': snapshot_id_prefix},
         ],
         order_by=order_by,
-        max_limit=LIST_MAX_LIMIT
+        max_limit=LIST_MAX_LIMIT,
+        get_count=get_count,
     )
 
 
