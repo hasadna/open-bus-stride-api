@@ -9,18 +9,24 @@ from open_bus_stride_db.db import get_session
 
 def get_list(*args, convert_to_dict=None, **kwargs):
     with get_session() as session:
-        if convert_to_dict is None:
-            return [obj.__dict__ for obj in get_list_query(session, *args, **kwargs)]
+        q = get_list_query(session, *args, **kwargs)
+        if kwargs.get('get_count'):
+            return fastapi.Response(content=str(q.count()), media_type="application/json")
+        elif convert_to_dict is None:
+            return [obj.__dict__ for obj in q]
         else:
-            return [convert_to_dict(obj) for obj in get_list_query(session, *args, **kwargs)]
+            return [convert_to_dict(obj) for obj in q]
 
 
 def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100,
-                   order_by=None,
+                   order_by=None, get_count=False,
                    post_session_query_hook=None):
-    if not limit and max_limit:
-        limit = max_limit
-    assert limit <= max_limit, f'max allowed limit is {max_limit}'
+    if get_count:
+        limit, offset, max_limit, order_by = None, None, None, None
+    else:
+        if not limit and max_limit:
+            limit = max_limit
+        assert limit <= max_limit, f'max allowed limit is {max_limit}'
     if filters is None:
         filters = []
     session_query = session.query(db_model)
@@ -44,9 +50,10 @@ def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100
             if field_name.lower() == 'id':
                 order_by_has_id_field = True
             order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
-    if not order_by_has_id_field:
-        order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
-    session_query = session_query.order_by(*order_by_args)
+    if not get_count:
+        if not order_by_has_id_field:
+            order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
+        session_query = session_query.order_by(*order_by_args)
     if limit:
         session_query = session_query.limit(limit)
     if offset:
@@ -161,6 +168,10 @@ def param_limit(max_limit=100):
 
 def param_offset():
     return fastapi.Query(None, description='Item number to start returning results from.')
+
+
+def param_get_count():
+    return fastapi.Query(False, description='Set to "true" to only get the total number of results for given filters. limit/offset/order parameters will be ignored.')
 
 
 def param_filter_list(what_singular, example='1,2,3'):

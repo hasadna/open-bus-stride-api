@@ -26,6 +26,7 @@ SQL_MODEL = SiriRoute
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
+          get_count: bool = common.param_get_count(),
           line_refs: str = common.param_filter_list('line ref'),
           operator_refs: str = common.param_filter_list('operator ref'),
           order_by: str = common.param_order_by()):
@@ -36,7 +37,8 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'in', 'field': SiriRoute.operator_ref, 'value': operator_refs},
         ],
         order_by=order_by,
-        max_limit=LIST_MAX_LIMIT
+        max_limit=LIST_MAX_LIMIT,
+        get_count=get_count,
     )
 
 

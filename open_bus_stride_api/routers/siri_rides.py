@@ -43,6 +43,7 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(max_limit=LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
+          get_count: bool = common.param_get_count(),
           siri_route_ids: str = common.param_filter_list('siri route ids'),
           siri_route__line_refs: str = common.param_filter_list('siri route line refs'),
           siri_route__operator_refs: str = common.param_filter_list('siri route operator refs'),
@@ -66,7 +67,8 @@ def list_(limit: int = common.param_limit(max_limit=LIST_MAX_LIMIT),
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
-        max_limit=LIST_MAX_LIMIT
+        max_limit=LIST_MAX_LIMIT,
+        get_count=get_count,
     )
 
 
