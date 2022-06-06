@@ -17,7 +17,9 @@ class GtfsRoutePydanticModel(pydantic.BaseModel):
     date: datetime.date
     line_ref: int
     operator_ref: int
-    route_short_name: str = None
+    route_short_name: str = pydantic.Field(
+        title='my title',
+        description='Route number, e.g "480"',)
     route_long_name: str = None
     route_mkt: str = None
     route_direction: str = None
@@ -41,8 +43,8 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           date_from: datetime.date = common.param_filter_date_from('date'),
           date_to: datetime.date = common.param_filter_date_to('date'),
           line_refs: str = common.param_filter_list('line ref'),
-          operator_refs: str = common.param_filter_list('operator ref'),
-          route_short_name: str = common.param_filter_equals('route short name'),
+          operator_refs: str = common.doc_param('operator ref', 'list', description='Agency identifier. To get it, first query gtfs_agencies.', example="3 for Eged"),
+          route_short_name: str = common.doc_param('route short name', 'equals', description='Line number.', example="480"),
           route_long_name_contains: str = common.param_filter_contains('route long name'),
           route_mkt: str = common.param_filter_equals('route mkt'),
           route_direction: str = common.param_filter_equals('route direction'),
