@@ -7,6 +7,21 @@ import sqlalchemy
 from open_bus_stride_db.db import get_session
 
 
+FILTER_DOCS = {
+    "list": 'Filter by {0}. Comma-separated list of values.',
+    "prefix": 'Filter by {0} prefix. Only return items which start with given string.',
+    "equals": 'Filter by {0}. Only return items which exactly match given string.',
+    "contains": 'Filter by {0}. Only return items which contain given string.',
+    "datetime_from": 'Filter by {0}. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+                     'Note that all date/times must have a timezone specification.',
+    "datetime_to": 'Filter by {0}. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+        'Note that all date/times must have a timezone specification.',
+    "date_from": 'Filter by {0}. Only return items which have a date after or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
+    "date_to": 'Filter by {0}. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
+    "greater_or_equal": 'Filter by {0}. Only return items which have a numeric value greater than or equal to given value',
+    "lower_or_equal": 'Filter by {0}. Only return items which have a numeric value lower than or equal to given value',
+}
+
 def get_list(*args, convert_to_dict=None, **kwargs):
     with get_session() as session:
         q = get_list_query(session, *args, **kwargs)
@@ -166,6 +181,15 @@ def param_limit(max_limit=100):
     return fastapi.Query(None, description=f'Limit the number of results up to {max_limit}. If not specified will limit to {max_limit} results. Use the offset param to get more results.')
 
 
+def doc_param(what_singular: str, filter_type: str, description: str = "", example: str = "", default: str = None):
+    filter_description = FILTER_DOCS.get(filter_type)
+    if filter_description:
+        description += "\n\n{0}".format(filter_description.format(what_singular))
+    if example:
+        description += "\n\nExample: {0}".format(example)
+    return fastapi.Query(default, description=description)
+
+
 def param_offset():
     return fastapi.Query(None, description='Item number to start returning results from.')
 
@@ -234,3 +258,4 @@ def router_get(router, tag, pydantic_model, what_singular):
 
 def param_get_id(what_singular):
     return fastapi.Query(..., description=f'{what_singular} id to get')
+
