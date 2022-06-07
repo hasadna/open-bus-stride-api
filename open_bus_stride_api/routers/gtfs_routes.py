@@ -17,9 +17,7 @@ class GtfsRoutePydanticModel(pydantic.BaseModel):
     date: datetime.date
     line_ref: int
     operator_ref: int
-    route_short_name: str = pydantic.Field(
-        title='my title',
-        description='Route number, e.g "480"',)
+    route_short_name: str = None
     route_long_name: str = None
     route_mkt: str = None
     route_direction: str = None

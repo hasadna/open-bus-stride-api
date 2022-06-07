@@ -10,12 +10,8 @@ from .version import VERSION
 from .routers import ROUTER_NAMES
 
 
-description = ""
-try:
-    with open("./open_bus_stride_api/DESCRIPTION.md", "r") as f:
-        description = f.read()
-except FileNotFoundError as err:
-    print("Failed to load description file, setting to empty")
+with open(os.path.join(os.path.dirname(__file__), "DESCRIPTION.md"), "r") as f:
+    description = f.read()
 
 app = FastAPI(version=VERSION, title='Open Bus Stride API', description=description)
 

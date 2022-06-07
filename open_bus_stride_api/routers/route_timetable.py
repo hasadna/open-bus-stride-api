@@ -57,15 +57,13 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           get_count: bool = common.param_get_count(),
           planned_start_time_date_from: datetime.datetime = common.doc_param('planned_start_time', 'datetime_from', description='Set to get the timetable of a specific ride'),
           planned_start_time_date_to: datetime.datetime = common.doc_param('planned_start_time', 'datetime_to', description='Set to get the timetable of a specific ride'),
-          line_refs: str = common.doc_param('line_ref', 'list', description='To get a line ref, first query gtfs_routes'),
-          operator_refs: str = common.param_filter_list('operator ref')):
+          line_refs: str = common.doc_param('line_ref', 'list', description='To get a line ref, first query gtfs_routes')):
     return common.get_list(
         GtfsStop, limit, offset,
         [
             {'type': 'datetime_from', 'field': model.GtfsRide.start_time, 'value': planned_start_time_date_from},
             {'type': 'datetime_to', 'field': model.GtfsRide.start_time, 'value': planned_start_time_date_to},
             {'type': 'in', 'field': model.GtfsRoute.line_ref, 'value': line_refs},
-            {'type': 'in', 'field': model.GtfsRoute.operator_ref, 'value': operator_refs},
         ],
         post_session_query_hook=_post_session_query_hook,
         convert_to_dict=_convert_to_dict,
