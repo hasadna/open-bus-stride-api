@@ -34,7 +34,7 @@ def get_list(*args, convert_to_dict=None, **kwargs):
 
 
 def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100,
-                   order_by=None, get_count=False,
+                   order_by=None, skip_order_by=False, get_count=False,
                    post_session_query_hook=None):
     if get_count:
         limit, offset, max_limit, order_by = None, None, None, None
@@ -65,7 +65,7 @@ def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100
             if field_name.lower() == 'id':
                 order_by_has_id_field = True
             order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
-    if not get_count:
+    if not get_count and not skip_order_by:
         if not order_by_has_id_field:
             order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
         session_query = session_query.order_by(*order_by_args)

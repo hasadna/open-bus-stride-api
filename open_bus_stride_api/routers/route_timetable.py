@@ -18,8 +18,8 @@ class RouteTimetablePydanticModel(pydantic.BaseModel):
     id: int
     name: str
     city: str
-    lon: int
-    lat: int
+    lon: float
+    lat: float
     planned_arrival_time: datetime.datetime = None
     gtfs_line_ref: str = None
     gtfs_line_start_time: datetime.datetime = None
@@ -55,8 +55,8 @@ def _convert_to_dict(obj):
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          planned_start_time_date_from: datetime.datetime = common.doc_param('planned_start_time', 'datetime_from', description='Set to get the timetable of a specific ride'),
-          planned_start_time_date_to: datetime.datetime = common.doc_param('planned_start_time', 'datetime_to', description='Set to get the timetable of a specific ride'),
+          planned_start_time_date_from: datetime.datetime = common.doc_param('planned_start_time', 'datetime_from', description='Set a time range to get the timetable of a specific ride'),
+          planned_start_time_date_to: datetime.datetime = common.doc_param('planned_start_time', 'datetime_to', description='Set a time range to get the time table of a specific ride'),
           line_refs: str = common.doc_param('line_ref', 'list', description='To get a line ref, first query gtfs_routes')):
     return common.get_list(
         GtfsStop, limit, offset,
@@ -69,4 +69,5 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
         convert_to_dict=_convert_to_dict,
         max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
+        skip_order_by=True,
     )
