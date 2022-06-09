@@ -28,7 +28,7 @@ SQL_MODEL = SiriStop
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          codes: str = common.param_filter_list('stop code'),
+          codes: str = common.doc_param('stop code', filter_type='list'),
           order_by: str = common.param_order_by()):
     return common.get_list(
         SiriStop, limit, offset,

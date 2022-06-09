@@ -8,18 +8,18 @@ from open_bus_stride_db.db import get_session
 
 
 FILTER_DOCS = {
-    "list": 'Filter by {what_singular. Comma-separated list of values.',
-    "prefix": 'Filter by {what_singular prefix. Only return items which start with given string.',
-    "equals": 'Filter by {what_singular. Only return items which exactly match given string.',
-    "contains": 'Filter by {what_singular. Only return items which contain given string.',
-    "datetime_from": 'Filter by {what_singular. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+    "list": 'Filter by {what_singular}. Comma-separated list of values.',
+    "prefix": 'Filter by {what_singular} prefix. Only return items which start with given string.',
+    "equals": 'Filter by {what_singular}. Only return items which exactly match given string.',
+    "contains": 'Filter by {what_singular}. Only return items which contain given string.',
+    "datetime_from": 'Filter by {what_singular}. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
                      'Note that all date/times must have a timezone specification.',
-    "datetime_to": 'Filter by {what_singular. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+    "datetime_to": 'Filter by {what_singular}. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
         'Note that all date/times must have a timezone specification.',
-    "date_from": 'Filter by {what_singular. Only return items which have a date after or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
-    "date_to": 'Filter by {what_singular. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
-    "greater_or_equal": 'Filter by {what_singular. Only return items which have a numeric value greater than or equal to given value',
-    "lower_or_equal": 'Filter by {what_singular. Only return items which have a numeric value lower than or equal to given value',
+    "date_from": 'Filter by {what_singular}. Only return items which have a date after or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
+    "date_to": 'Filter by {what_singular}. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
+    "greater_or_equal": 'Filter by {what_singular}. Only return items which have a numeric value greater than or equal to given value',
+    "lower_or_equal": 'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value',
 }
 
 def get_list(*args, convert_to_dict=None, **kwargs):
@@ -184,7 +184,7 @@ def param_limit(max_limit=100):
 def doc_param(what_singular: str, filter_type: str, description: str = "", example: str = "", default: str = None):
     filter_description = FILTER_DOCS.get(filter_type)
     if filter_description:
-        description += "\n\n{0}".format(filter_description.format(what_singular))
+        description += "\n\n{0}".format(filter_description.format(what_singular=what_singular))
     if example:
         description += "\n\nExample: {0}".format(example)
     return fastapi.Query(default, description=description)

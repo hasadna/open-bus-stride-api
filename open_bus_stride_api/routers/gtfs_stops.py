@@ -34,10 +34,10 @@ SQL_MODEL = GtfsStopPydanticModel
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          date_from: datetime.date = common.param_filter_date_from('date'),
-          date_to: datetime.date = common.param_filter_date_to('date'),
-          code: int = common.param_filter_equals('code'),
-          city: str = common.param_filter_equals('city')):
+          date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
+          date_to: datetime.date = common.doc_param('date', filter_type='date_to'),
+          code: int = common.doc_param('code', filter_type='equals'),
+          city: str = common.doc_param('city', filter_type='equals')):
     return common.get_list(
         GtfsStop, limit, offset,
         [

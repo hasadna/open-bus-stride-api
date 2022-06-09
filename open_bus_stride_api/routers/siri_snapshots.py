@@ -41,7 +41,7 @@ SQL_MODEL = SiriSnapshot
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          snapshot_id_prefix: str = common.param_filter_prefix('snapshot id'),
+          snapshot_id_prefix: str = common.doc_param('snapshot id', filter_type='prefix'),
           order_by: str = common.param_order_by()):
     return common.get_list(
         SiriSnapshot, limit, offset,

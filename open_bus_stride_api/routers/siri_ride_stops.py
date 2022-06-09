@@ -95,20 +95,20 @@ def _convert_to_dict(obj: model.SiriRideStop):
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          siri_stop_ids: str = common.param_filter_list('siri stop id'),
-          siri_ride_ids: str = common.param_filter_list('siri ride id'),
-          siri_vehicle_location__lon__greater_or_equal: float = common.param_filter_greater_or_equal(
-              'siri vehicle location lon', 34.808),
-          siri_vehicle_location__lon__lower_or_equal: float = common.param_filter_lower_or_equal(
-              'siri vehicle location lon', 34.808),
-          siri_vehicle_location__lat__greater_or_equal: float = common.param_filter_greater_or_equal(
-              'siri vehicle location lat', 31.961),
-          siri_vehicle_location__lat__lower_or_equal: float = common.param_filter_lower_or_equal(
-              'siri vehicle location lat', 31.961),
-          siri_vehicle_location__recorded_at_time_from: datetime.datetime = common.param_filter_datetime_from(
-              'siri vehicle location recorded at time'),
-          siri_vehicle_location__recorded_at_time_to: datetime.datetime = common.param_filter_datetime_to(
-              'siri vehicle location recorded at time'),
+          siri_stop_ids: str = common.doc_param('siri stop id', filter_type='list'),
+          siri_ride_ids: str = common.doc_param('siri ride id', filter_type='list'),
+          siri_vehicle_location__lon__greater_or_equal: float = common.doc_param(
+              'siri vehicle location lon', filter_type='greater_or_equal', example='34.808'),
+          siri_vehicle_location__lon__lower_or_equal: float = common.doc_param(
+              'siri vehicle location lon', filter_type='lower_or_equal', example='34.808'),
+          siri_vehicle_location__lat__greater_or_equal: float = common.doc_param(
+              'siri vehicle location lat', filter_type='greater_or_equal', example='31.961'),
+          siri_vehicle_location__lat__lower_or_equal: float = common.doc_param(
+              'siri vehicle location lat', filter_type='lower_or_equal', example='31.961'),
+          siri_vehicle_location__recorded_at_time_from: datetime.datetime = common.doc_param(
+              'siri vehicle location recorded at time', filter_type='datetime_from'),
+          siri_vehicle_location__recorded_at_time_to: datetime.datetime = common.doc_param(
+              'siri vehicle location recorded at time', filter_type='datetime_to'),
           order_by: str = common.param_order_by(),
           ):
     return common.get_list(
