@@ -58,6 +58,9 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           planned_start_time_date_from: datetime.datetime = common.doc_param('planned_start_time', 'datetime_from', description='Set a time range to get the timetable of a specific ride'),
           planned_start_time_date_to: datetime.datetime = common.doc_param('planned_start_time', 'datetime_to', description='Set a time range to get the time table of a specific ride'),
           line_refs: str = common.doc_param('line_ref', 'list', description='To get a line ref, first query gtfs_routes')):
+    assert line_refs or (planned_start_time_date_to and planned_start_time_date_from), 'please select either line_refs or both planned_start_time_from and planned_start_time_to'
+    if planned_start_time_date_from and planned_start_time_date_to:
+        assert (planned_start_time_date_to - planned_start_time_date_from).total_seconds() <= 86400, 'planned_start_time_date_from/to interval must be lower than 1 day'
     return common.get_list(
         GtfsStop, limit, offset,
         [
