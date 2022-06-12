@@ -1,5 +1,7 @@
 # this is the order the routers will be displayed in the docs
 ROUTER_NAMES = [
+    'route_timetable',
+    
     'siri_routes',
     'siri_rides',
     'siri_stops',

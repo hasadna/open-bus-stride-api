@@ -7,6 +7,21 @@ import sqlalchemy
 from open_bus_stride_db.db import get_session
 
 
+FILTER_DOCS = {
+    "list": 'Filter by {what_singular}. Comma-separated list of values.',
+    "prefix": 'Filter by {what_singular} prefix. Only return items which start with given string.',
+    "equals": 'Filter by {what_singular}. Only return items which exactly match given string.',
+    "contains": 'Filter by {what_singular}. Only return items which contain given string.',
+    "datetime_from": 'Filter by {what_singular}. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+                     'Note that all date/times must have a timezone specification.',
+    "datetime_to": 'Filter by {what_singular}. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+        'Note that all date/times must have a timezone specification.',
+    "date_from": 'Filter by {what_singular}. Only return items which have a date after or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
+    "date_to": 'Filter by {what_singular}. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
+    "greater_or_equal": 'Filter by {what_singular}. Only return items which have a numeric value greater than or equal to given value',
+    "lower_or_equal": 'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value',
+}
+
 def get_list(*args, convert_to_dict=None, **kwargs):
     with get_session() as session:
         q = get_list_query(session, *args, **kwargs)
@@ -19,7 +34,7 @@ def get_list(*args, convert_to_dict=None, **kwargs):
 
 
 def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100,
-                   order_by=None, get_count=False,
+                   order_by=None, skip_order_by=False, get_count=False,
                    post_session_query_hook=None):
     if get_count:
         limit, offset, max_limit, order_by = None, None, None, None
@@ -50,7 +65,7 @@ def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100
             if field_name.lower() == 'id':
                 order_by_has_id_field = True
             order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
-    if not get_count:
+    if not get_count and not skip_order_by:
         if not order_by_has_id_field:
             order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
         session_query = session_query.order_by(*order_by_args)
@@ -166,6 +181,15 @@ def param_limit(max_limit=100):
     return fastapi.Query(None, description=f'Limit the number of results up to {max_limit}. If not specified will limit to {max_limit} results. Use the offset param to get more results.')
 
 
+def doc_param(what_singular: str, filter_type: str, description: str = "", example: str = "", default: str = None):
+    filter_description = FILTER_DOCS.get(filter_type)
+    if filter_description:
+        description += "\n\n{0}".format(filter_description.format(what_singular=what_singular))
+    if example:
+        description += "\n\nExample: {0}".format(example)
+    return fastapi.Query(default, description=description)
+
+
 def param_offset():
     return fastapi.Query(None, description='Item number to start returning results from.')
 
@@ -234,3 +258,4 @@ def router_get(router, tag, pydantic_model, what_singular):
 
 def param_get_id(what_singular):
     return fastapi.Query(..., description=f'{what_singular} id to get')
+

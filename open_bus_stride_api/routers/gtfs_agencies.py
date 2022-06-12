@@ -28,8 +28,8 @@ PYDANTIC_MODEL = GtfsAgencyPydanticModel
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
-          date_from: datetime.date = common.param_filter_date_from('date'),
-          date_to: datetime.date = common.param_filter_date_to('date')):
+          date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
+          date_to: datetime.date = common.doc_param('date', filter_type='date_to')):
     with get_session() as session:
         if not limit:
             limit = LIST_MAX_LIMIT

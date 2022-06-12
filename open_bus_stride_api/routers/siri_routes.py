@@ -27,8 +27,8 @@ SQL_MODEL = SiriRoute
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          line_refs: str = common.param_filter_list('line ref'),
-          operator_refs: str = common.param_filter_list('operator ref'),
+          line_refs: str = common.doc_param('line ref', filter_type='list'),
+          operator_refs: str = common.doc_param('operator ref', filter_type='list'),
           order_by: str = common.param_order_by()):
     return common.get_list(
         SQL_MODEL, limit, offset,

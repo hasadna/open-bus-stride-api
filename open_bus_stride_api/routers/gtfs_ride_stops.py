@@ -36,8 +36,8 @@ SQL_MODEL = model.GtfsRideStop
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          gtfs_stop_ids: str = common.param_filter_list('gtfs stop id'),
-          gtfs_ride_ids: str = common.param_filter_list('gtfs ride id')):
+          gtfs_stop_ids: str = common.doc_param('gtfs stop id', filter_type='list'),
+          gtfs_ride_ids: str = common.doc_param('gtfs ride id', filter_type='list')):
     return common.get_list(
         model.GtfsRideStop, limit, offset,
         [

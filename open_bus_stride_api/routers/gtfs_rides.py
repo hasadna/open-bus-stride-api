@@ -29,8 +29,8 @@ SQL_MODEL = GtfsRide
 def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
-          gtfs_route_id: int = common.param_filter_equals('gtfs route id'),
-          journey_ref_prefix: str = common.param_filter_prefix('journey ref')):
+          gtfs_route_id: int = common.doc_param('gtfs route id', filter_type='equals'),
+          journey_ref_prefix: str = common.doc_param('journey ref', filter_type='prefix')):
     return common.get_list(
         GtfsRide, limit, offset,
         [
