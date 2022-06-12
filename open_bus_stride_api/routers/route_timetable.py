@@ -16,10 +16,10 @@ router = APIRouter()
 
 class RouteTimetablePydanticModel(pydantic.BaseModel):
     id: int
-    name: str
-    city: str
-    lon: float
-    lat: float
+    name: str = None
+    city: str = None
+    lon: float = None
+    lat: float = None
     planned_arrival_time: datetime.datetime = None
     gtfs_line_ref: str = None
     gtfs_line_start_time: datetime.datetime = None
