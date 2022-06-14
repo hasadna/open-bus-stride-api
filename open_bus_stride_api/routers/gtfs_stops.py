@@ -27,7 +27,7 @@ WHAT_SINGULAR = 'gtfs stop'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'gtfs'
 PYDANTIC_MODEL = GtfsStopPydanticModel
-SQL_MODEL = GtfsStopPydanticModel
+SQL_MODEL = GtfsStop
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
