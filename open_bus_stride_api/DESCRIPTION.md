@@ -10,3 +10,5 @@ For more advanced usage-
 
 * Use **gtfs** for data about the planned lines timetables. 
 * Use **siri** for data about lines real-time
+* See [Open Bus Stride Data Model](https://github.com/hasadna/open-bus-stride-db/blob/main/DATA_MODEL.md) for description of field and table names.
+* See [Open Bus Stride ETL Processes](https://github.com/hasadna/open-bus-pipelines/blob/main/STRIDE_ETL_PROCESSES.md) for description of the ETL processes which fetch and aggregate the data.
