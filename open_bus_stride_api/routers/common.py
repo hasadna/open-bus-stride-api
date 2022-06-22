@@ -7,7 +7,7 @@ import pydantic
 import sqlalchemy
 import sqlalchemy.orm
 
-from open_bus_stride_db.db import _sessionmaker
+from open_bus_stride_db.db import _sessionmaker, get_session
 
 
 DEFAULT_LIMIT = 100
@@ -31,11 +31,15 @@ FILTER_DOCS = {
 }
 
 
+def post_process_response_obj(obj, convert_to_dict):
+    return obj.__dict__ if convert_to_dict is None else convert_to_dict(obj)
+
+
 def streaming_response_iterator(session, first_items, q_iterator, convert_to_dict):
     try:
         yield b"["
         for i, obj in enumerate(itertools.chain(first_items, q_iterator)):
-            item = obj.__dict__ if convert_to_dict is None else convert_to_dict(obj)
+            item = post_process_response_obj(obj, convert_to_dict)
             item = fastapi.encoders.jsonable_encoder(item)
             if i > 0:
                 yield b","
@@ -60,7 +64,7 @@ def get_list(*args, convert_to_dict=None, **kwargs):
             q_iterator = (obj for obj in q)
             first_items = list(itertools.islice(q_iterator, QUERY_PAGE_SIZE + 1))
             if len(first_items) <= QUERY_PAGE_SIZE:
-                return first_items
+                return [post_process_response_obj(obj, convert_to_dict) for obj in first_items]
             else:
                 return fastapi.responses.StreamingResponse(
                     streaming_response_iterator(session, first_items, q_iterator, convert_to_dict),

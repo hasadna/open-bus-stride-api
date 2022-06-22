@@ -83,3 +83,25 @@ def name(<filtering_params>, limit, offset): # always include limit & offest to 
 ```
 
 Filter types are defined at ```open_bus_stride_api/routers/common.py -> get_list_query_filter_<filter_type>``` (e.g.: 'equal', 'date_in_range')
+
+### Running Tests
+
+Install for local development as described above.
+
+Install test requirements:
+
+```
+pip install -r tests/requirements.txt
+```
+
+To run the tests you need to connect to a DB with full stride data, 
+easiest way is to connect to the production DB as described above by
+setting the SQLALCHEMY_URL env var accordingly.
+
+Run all tests with full output, exiting on first error:
+
+```
+pytest -svvx
+```
+
+Pytest has many options, see the help message for details.
