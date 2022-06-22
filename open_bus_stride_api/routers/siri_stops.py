@@ -16,7 +16,6 @@ class SiriStopPydanticModel(pydantic.BaseModel):
     code: int
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'siri stop'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'siri'
@@ -25,7 +24,7 @@ SQL_MODEL = SiriStop
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           codes: str = common.doc_param('stop code', filter_type='list'),
@@ -36,7 +35,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'in', 'field': SiriStop.code, 'value': codes},
         ],
         order_by=order_by,
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 

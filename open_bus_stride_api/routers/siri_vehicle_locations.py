@@ -28,7 +28,6 @@ class SiriVehicleLocationPydanticModel(pydantic.BaseModel):
     distance_from_siri_ride_stop_meters: typing.Optional[int]
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'siri vehicle location'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'siri'
@@ -80,7 +79,7 @@ def _convert_to_dict(obj: model.SiriVehicleLocation):
     return res
 
 @common.router_list(router, TAG, SiriVehicleLocationWithRelatedPydanticModel, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           siri_vehicle_location_ids: str = common.doc_param('siri vehicle location id', filter_type='list'),
@@ -122,7 +121,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
         convert_to_dict=_convert_to_dict,
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 

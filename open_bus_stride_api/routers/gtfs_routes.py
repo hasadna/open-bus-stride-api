@@ -26,7 +26,6 @@ class GtfsRoutePydanticModel(pydantic.BaseModel):
     route_type: str = None
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'gtfs route'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'gtfs'
@@ -35,7 +34,7 @@ SQL_MODEL = GtfsRoute
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
@@ -66,7 +65,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'equals', 'field': GtfsRoute.route_type, 'value': route_type},
         ],
         order_by=order_by,
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 

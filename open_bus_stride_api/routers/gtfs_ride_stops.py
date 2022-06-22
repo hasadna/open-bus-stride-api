@@ -24,7 +24,6 @@ class GtfsRideStopPydanticModel(pydantic.BaseModel):
     shape_dist_traveled: int = None
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'gtfs ride stop'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'gtfs'
@@ -33,7 +32,7 @@ SQL_MODEL = model.GtfsRideStop
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           gtfs_stop_ids: str = common.doc_param('gtfs stop id', filter_type='list'),
@@ -44,7 +43,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'in', 'field': model.GtfsRideStop.gtfs_stop_id, 'value': gtfs_stop_ids},
             {'type': 'in', 'field': model.GtfsRideStop.gtfs_ride_id, 'value': gtfs_ride_ids},
         ],
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 
