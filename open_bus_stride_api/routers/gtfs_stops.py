@@ -22,7 +22,6 @@ class GtfsStopPydanticModel(pydantic.BaseModel):
     city: str = None
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'gtfs stop'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'gtfs'
@@ -31,7 +30,7 @@ SQL_MODEL = GtfsStop
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
@@ -46,7 +45,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'equals', 'field': GtfsStop.code, 'value': code},
             {'type': 'equals', 'field': GtfsStop.city, 'value': city},
         ],
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 

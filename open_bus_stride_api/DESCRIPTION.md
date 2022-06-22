@@ -5,9 +5,19 @@ Welcome to The Public Knowledge Workshop's Stride project. We provide usable and
 For background on the project and some more detailed documentation and usage guides, see [STRIDE.md](https://github.com/hasadna/open-bus-pipelines/blob/main/STRIDE.md).
 
 Looking for a specific use-case?
+
 * Take a look at the **user cases** APIs below.
 * Try one of our existing [jupyter notebooks](https://github.com/hasadna/open-bus-stride-client/blob/main/README.md#using-the-interactive-jupyter-notebooks).
-* Don't see your use-case covered here? Please [open us a ticket](https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Fhasadna%2Fopen-bus%2Fissues%2Fnew)!   
+* Don't see your use-case covered here? Please [open us a ticket](https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Fhasadna%2Fopen-bus%2Fissues%2Fnew)!
+
+Queries are by default limited to 100 results per query, this limit can be increased up to 500,000 results.
+Please try to set appropriate query parameters to limit the results to reduce load on our DB.
+If you do need to get large number of results (up to 500,000) it's recommended to use one of these methods:
+
+1. Use HTTP streaming and JSON streaming decoder, this method is most efficient and provide accurate results.
+   Our [Stride Python Client iterate method](https://github.com/hasadna/open-bus-stride-client#usage) uses this method.
+2. Use combination of limit / offset parameters to get results by page. This method may be less accurate because
+   it depends on data remaining unchanged between requests.
 
 For more advanced usage-
 

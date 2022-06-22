@@ -1,10 +1,18 @@
+import json
 import typing
+import itertools
 
 import fastapi
 import pydantic
 import sqlalchemy
+import sqlalchemy.orm
 
-from open_bus_stride_db.db import get_session
+from open_bus_stride_db.db import _sessionmaker
+
+
+DEFAULT_LIMIT = 100
+MAX_LIMIT = 500000
+QUERY_PAGE_SIZE = 1000
 
 
 FILTER_DOCS = {
@@ -22,26 +30,57 @@ FILTER_DOCS = {
     "lower_or_equal": 'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value',
 }
 
+
+def streaming_response_iterator(session, first_items, q_iterator, convert_to_dict):
+    try:
+        yield b"["
+        for i, obj in enumerate(itertools.chain(first_items, q_iterator)):
+            item = obj.__dict__ if convert_to_dict is None else convert_to_dict(obj)
+            item = fastapi.encoders.jsonable_encoder(item)
+            if i > 0:
+                yield b","
+            yield json.dumps(item).encode()
+            if i + 1 >= MAX_LIMIT:
+                raise Exception("Too many results, please limit the query")
+        yield b"]"
+    finally:
+        session.close()
+
+
 def get_list(*args, convert_to_dict=None, **kwargs):
-    with get_session() as session:
+    session = _sessionmaker()
+    try:
         q = get_list_query(session, *args, **kwargs)
         if kwargs.get('get_count'):
-            return fastapi.Response(content=str(q.count()), media_type="application/json")
-        elif convert_to_dict is None:
-            return [obj.__dict__ for obj in q]
+            q_count = q.count()
+            session.close()
+            return fastapi.Response(content=str(q_count), media_type="application/json")
         else:
-            return [convert_to_dict(obj) for obj in q]
+            q = q.yield_per(QUERY_PAGE_SIZE)
+            q_iterator = (obj for obj in q)
+            first_items = list(itertools.islice(q_iterator, QUERY_PAGE_SIZE + 1))
+            if len(first_items) <= QUERY_PAGE_SIZE:
+                return first_items
+            else:
+                return fastapi.responses.StreamingResponse(
+                    streaming_response_iterator(session, first_items, q_iterator, convert_to_dict),
+                    media_type="application/json"
+                )
+    except:
+        session.close()
+        raise
 
 
-def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100,
+def get_list_query(session, db_model, limit, offset, filters=None, default_limit=DEFAULT_LIMIT,
                    order_by=None, skip_order_by=False, get_count=False,
                    post_session_query_hook=None):
     if get_count:
-        limit, offset, max_limit, order_by = None, None, None, None
+        limit, offset, default_limit, order_by = None, None, None, None
     else:
-        if not limit and max_limit:
-            limit = max_limit
-        assert limit <= max_limit, f'max allowed limit is {max_limit}'
+        if not limit and default_limit:
+            limit = default_limit
+        elif limit == -1:
+            limit = None
     if filters is None:
         filters = []
     session_query = session.query(db_model)
@@ -49,26 +88,29 @@ def get_list_query(session, db_model, limit, offset, filters=None, max_limit=100
         session_query = post_session_query_hook(session_query)
     for filter in filters:
         session_query = globals()['get_list_query_filter_{}'.format(filter['type'])](session_query, filters, filter)
-    order_by_args = []
-    order_by_has_id_field = False
-    if order_by:
-        for ob in order_by.split(','):
-            ob = ob.strip()
-            if not ob:
-                continue
-            ob = ob.split()
-            if len(ob) == 1:
-                field_name = ob[0]
-                direction = None
-            else:
-                field_name, direction = ob
-            if field_name.lower() == 'id':
-                order_by_has_id_field = True
-            order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
-    if not get_count and not skip_order_by:
-        if not order_by_has_id_field:
-            order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
-        session_query = session_query.order_by(*order_by_args)
+    if skip_order_by:
+        assert not order_by
+    else:
+        order_by_args = []
+        order_by_has_id_field = False
+        if order_by:
+            for ob in order_by.split(','):
+                ob = ob.strip()
+                if not ob:
+                    continue
+                ob = ob.split()
+                if len(ob) == 1:
+                    field_name = ob[0]
+                    direction = None
+                else:
+                    field_name, direction = ob
+                if field_name.lower() == 'id':
+                    order_by_has_id_field = True
+                order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
+        if not get_count:
+            if limit != -1 and not order_by_has_id_field:
+                order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
+            session_query = session_query.order_by(*order_by_args)
     if limit:
         session_query = session_query.limit(limit)
     if offset:
@@ -177,8 +219,16 @@ def pydantic_create_model_with_related(model_name, base_model, *related_models):
     return pydantic.create_model(model_name, **kwargs)
 
 
-def param_limit(max_limit=100):
-    return fastapi.Query(None, description=f'Limit the number of results up to {max_limit}. If not specified will limit to {max_limit} results. Use the offset param to get more results.')
+def param_limit(default_limit=DEFAULT_LIMIT):
+    return fastapi.Query(
+        None,
+        description=f'Limit the number of returned results. '
+                    f'If not specified will limit to {default_limit} results. '
+                    f'To get more results, you can either use the offset param, '
+                    f'alternatively - set the limit to -1 and use http streaming '
+                    f'with compatible json streaming decoder to get all results, '
+                    f'this method can fetch up to a maximum of {MAX_LIMIT} results.'
+    )
 
 
 def doc_param(what_singular: str, filter_type: str, description: str = "", example: str = "", default: str = None):
@@ -191,7 +241,11 @@ def doc_param(what_singular: str, filter_type: str, description: str = "", examp
 
 
 def param_offset():
-    return fastapi.Query(None, description='Item number to start returning results from.')
+    return fastapi.Query(None, description='Item number to start returning results from. '
+                                           'Use in combination with limit for pagination, '
+                                           'alternatively, don\'t set offset, set limit to -1 '
+                                           'and use http streaming with compatible json streaming '
+                                           f'decoder to get all results up to a maximum of {MAX_LIMIT} results.')
 
 
 def param_get_count():
