@@ -7,7 +7,7 @@ import sqlalchemy.orm
 from open_bus_stride_db import model
 
 from . import common
-from . import siri_rides, siri_stops, gtfs_stops, siri_vehicle_locations, gtfs_ride_stops
+from . import siri_rides, siri_stops, gtfs_stops, siri_vehicle_locations, gtfs_ride_stops, gtfs_rides, gtfs_routes
 
 
 router = APIRouter()
@@ -44,6 +44,13 @@ nearest_siri_vehicle_location_related_model = common.PydanticRelatedModel(
 gtfs_ride_stop_related_model = common.PydanticRelatedModel(
     'gtfs_ride_stop__', gtfs_ride_stops.GtfsRideStopPydanticModel, ['id']
 )
+gtfs_ride_related_model = common.PydanticRelatedModel(
+    'gtfs_ride__', gtfs_rides.GtfsRidePydanticModel, ['id']
+)
+gtfs_route_related_model = common.PydanticRelatedModel(
+    'gtfs_route__', gtfs_routes.GtfsRoutePydanticModel, ['id']
+)
+
 
 SiriRideStopWithRelatedPydanticModel = common.pydantic_create_model_with_related(
     'SiriRideStopWithRelatedPydanticModel',
@@ -52,7 +59,9 @@ SiriRideStopWithRelatedPydanticModel = common.pydantic_create_model_with_related
     siri_ride_related_model,
     gtfs_stop_related_model,
     nearest_siri_vehicle_location_related_model,
-    gtfs_ride_stop_related_model
+    gtfs_ride_stop_related_model,
+    gtfs_ride_related_model,
+    gtfs_route_related_model,
 )
 
 
@@ -66,27 +75,31 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
         .add_entity(model.SiriVehicleLocation)
         .add_entity(model.GtfsRideStop)
         .add_entity(model.GtfsRide)
+        .add_entity(model.GtfsRoute)
         .join(model.SiriRide)
         .join(model.SiriStop)
-        .outerjoin(model.GtfsStop, model.SiriRideStop.gtfs_stop_id == model.GtfsStop.id)
-        .outerjoin(model.SiriVehicleLocation, model.SiriRideStop.nearest_siri_vehicle_location_id == model.SiriVehicleLocation.id)
-        .outerjoin(model.GtfsRide, model.SiriRide.gtfs_ride_id == model.GtfsRide.id)
-        .outerjoin(
+        .join(model.GtfsStop, model.SiriRideStop.gtfs_stop_id == model.GtfsStop.id)
+        .join(model.SiriVehicleLocation, model.SiriRideStop.nearest_siri_vehicle_location_id == model.SiriVehicleLocation.id)
+        .join(model.GtfsRide, model.SiriRide.gtfs_ride_id == model.GtfsRide.id)
+        .join(
             model.GtfsRideStop,
             sqlalchemy.sql.and_(model.GtfsRideStop.gtfs_stop_id == model.GtfsStop.id,
                                 model.GtfsRideStop.gtfs_ride_id == model.GtfsRide.id)
         )
+        .join(model.GtfsRoute, model.GtfsRide.gtfs_route_id == model.GtfsRoute.id)
     )
 
 
 def _convert_to_dict(obj: model.SiriRideStop):
-    siri_ride_stop, siri_ride, siri_stop, gtfs_stop, nearest_siri_vehicle_location, gtfs_ride_stop, gtfs_ride = obj
+    siri_ride_stop, siri_ride, siri_stop, gtfs_stop, nearest_siri_vehicle_location, gtfs_ride_stop, gtfs_ride, gtfs_route = obj
     res = siri_ride_stop.__dict__
     siri_stop_related_model.add_orm_obj_to_dict_res(siri_stop, res)
     siri_ride_related_model.add_orm_obj_to_dict_res(siri_ride, res)
     gtfs_stop_related_model.add_orm_obj_to_dict_res(gtfs_stop, res)
     nearest_siri_vehicle_location_related_model.add_orm_obj_to_dict_res(nearest_siri_vehicle_location, res)
     gtfs_ride_stop_related_model.add_orm_obj_to_dict_res(gtfs_ride_stop, res)
+    gtfs_ride_related_model.add_orm_obj_to_dict_res(gtfs_ride, res)
+    gtfs_route_related_model.add_orm_obj_to_dict_res(gtfs_route, res)
     return res
 
 
@@ -108,6 +121,16 @@ def list_(limit: int = common.param_limit(),
               'siri vehicle location recorded at time', filter_type='datetime_from'),
           siri_vehicle_location__recorded_at_time_to: datetime.datetime = common.doc_param(
               'siri vehicle location recorded at time', filter_type='datetime_to'),
+          gtfs_stop__lat__greater_or_equal: float = common.doc_param(
+              'gtfs stop lat', filter_type='greater_or_equal', example='31.961'),
+          gtfs_stop__lat__lower_or_equal: float = common.doc_param(
+              'gtfs stop lat', filter_type='lower_or_equal', example='31.961'),
+          gtfs_stop__lon__greater_or_equal: float = common.doc_param(
+              'gtfs stop lon', filter_type='greater_or_equal', example='34.808'),
+          gtfs_stop__lon__lower_or_equal: float = common.doc_param(
+              'gtfs stop lon', filter_type='lower_or_equal', example='34.808'),
+          gtfs_route__date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
+          gtfs_route__date_to: datetime.date = common.doc_param('date', filter_type='date_to'),
           order_by: str = common.param_order_by(),
           ):
     return common.get_list(
@@ -121,6 +144,12 @@ def list_(limit: int = common.param_limit(),
             {'type': 'lower_or_equal', 'field': model.SiriVehicleLocation.lat, 'value': siri_vehicle_location__lat__lower_or_equal},
             {'type': 'datetime_from', 'field': model.SiriVehicleLocation.recorded_at_time, 'value': siri_vehicle_location__recorded_at_time_from},
             {'type': 'datetime_to', 'field': model.SiriVehicleLocation.recorded_at_time, 'value': siri_vehicle_location__recorded_at_time_to},
+            {'type': 'greater_or_equal', 'field': model.GtfsStop.lat, 'value': gtfs_stop__lat__greater_or_equal},
+            {'type': 'lower_or_equal', 'field': model.GtfsStop.lat, 'value': gtfs_stop__lat__lower_or_equal},
+            {'type': 'greater_or_equal', 'field': model.GtfsStop.lon, 'value': gtfs_stop__lon__greater_or_equal},
+            {'type': 'lower_or_equal', 'field': model.GtfsStop.lon, 'value': gtfs_stop__lon__lower_or_equal},
+            {'type': 'datetime_from', 'field': model.GtfsRoute.date, 'value': gtfs_route__date_from},
+            {'type': 'datetime_to', 'field': model.GtfsRoute.date, 'value': gtfs_route__date_to},
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,

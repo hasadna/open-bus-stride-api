@@ -1,3 +1,5 @@
+import datetime
+
 from open_bus_stride_api.routers.common import DEFAULT_LIMIT
 
 
@@ -22,3 +24,11 @@ def assert_router_list_get(client, base_path, params=None, get_get_count_params=
     assert res.status_code == 200
     assert isinstance(res.json(), dict)
     return items
+
+
+def get_last_weekday_date():
+    for minus_days in range(2, 6):
+        date = (datetime.datetime.now() - datetime.timedelta(days=minus_days)).date()
+        # Monday == 0 ... Sunday == 6
+        if date.weekday() not in [4, 5]:
+            return date
