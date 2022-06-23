@@ -1,3 +1,4 @@
+import os
 import json
 import typing
 import itertools
@@ -13,6 +14,7 @@ from open_bus_stride_db.db import _sessionmaker, get_session
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 500000
 QUERY_PAGE_SIZE = 1000
+DEBUG = bool(os.environ.get('DEBUG'))
 
 
 FILTER_DOCS = {
@@ -31,6 +33,11 @@ FILTER_DOCS = {
 }
 
 
+def debug_print(*args):
+    if DEBUG:
+        print(*args)
+
+
 def post_process_response_obj(obj, convert_to_dict):
     return obj.__dict__ if convert_to_dict is None else convert_to_dict(obj)
 
@@ -44,6 +51,8 @@ def streaming_response_iterator(session, first_items, q_iterator, convert_to_dic
             if i > 0:
                 yield b","
             yield json.dumps(item).encode()
+            if i == 0:
+                debug_print(f'yielded first item: {item}')
             if i + 1 >= MAX_LIMIT:
                 raise Exception("Too many results, please limit the query")
         yield b"]"
@@ -52,6 +61,7 @@ def streaming_response_iterator(session, first_items, q_iterator, convert_to_dic
 
 
 def get_list(*args, convert_to_dict=None, **kwargs):
+    debug_print(f'start get_list {args}')
     session = _sessionmaker()
     try:
         q = get_list_query(session, *args, **kwargs)
@@ -64,8 +74,10 @@ def get_list(*args, convert_to_dict=None, **kwargs):
             q_iterator = (obj for obj in q)
             first_items = list(itertools.islice(q_iterator, QUERY_PAGE_SIZE + 1))
             if len(first_items) <= QUERY_PAGE_SIZE:
+                debug_print(f'got {len(first_items)} items - returning without streaming')
                 return [post_process_response_obj(obj, convert_to_dict) for obj in first_items]
             else:
+                debug_print(f'got {len(first_items)} items - returning using streaming')
                 return fastapi.responses.StreamingResponse(
                     streaming_response_iterator(session, first_items, q_iterator, convert_to_dict),
                     media_type="application/json"
@@ -78,13 +90,13 @@ def get_list(*args, convert_to_dict=None, **kwargs):
 def get_list_query(session, db_model, limit, offset, filters=None, default_limit=DEFAULT_LIMIT,
                    order_by=None, skip_order_by=False, get_count=False,
                    post_session_query_hook=None):
+    debug_print(f'get_list_query: limit={limit}, offset={offset}, order_by={order_by}')
     if get_count:
         limit, offset, default_limit, order_by = None, None, None, None
-    else:
-        if not limit and default_limit:
-            limit = default_limit
-        elif limit == -1:
-            limit = None
+    elif not limit and default_limit:
+        limit = default_limit
+    if limit:
+        limit = int(limit)
     if filters is None:
         filters = []
     session_query = session.query(db_model)
@@ -115,7 +127,7 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
             if limit != -1 and not order_by_has_id_field:
                 order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
             session_query = session_query.order_by(*order_by_args)
-    if limit:
+    if limit and limit != -1:
         session_query = session_query.limit(limit)
     if offset:
         session_query = session_query.offset(offset)

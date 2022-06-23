@@ -121,6 +121,10 @@ def list_(limit: int = common.param_limit(),
               'siri vehicle location recorded at time', filter_type='datetime_from'),
           siri_vehicle_location__recorded_at_time_to: datetime.datetime = common.doc_param(
               'siri vehicle location recorded at time', filter_type='datetime_to'),
+          siri_ride__scheduled_start_time_from: datetime.datetime = common.doc_param(
+              'siri ride scheduled start time', filter_type='datetime_from'),
+          siri_ride__scheduled_start_time_to: datetime.datetime = common.doc_param(
+              'siri ride scheduled start time', filter_type='datetime_to'),
           gtfs_stop__lat__greater_or_equal: float = common.doc_param(
               'gtfs stop lat', filter_type='greater_or_equal', example='31.961'),
           gtfs_stop__lat__lower_or_equal: float = common.doc_param(
@@ -129,9 +133,13 @@ def list_(limit: int = common.param_limit(),
               'gtfs stop lon', filter_type='greater_or_equal', example='34.808'),
           gtfs_stop__lon__lower_or_equal: float = common.doc_param(
               'gtfs stop lon', filter_type='lower_or_equal', example='34.808'),
-          gtfs_route__date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
-          gtfs_route__date_to: datetime.date = common.doc_param('date', filter_type='date_to'),
-          order_by: str = common.param_order_by(),
+          gtfs_date_from: datetime.date = common.doc_param(
+              'gtfs date', filter_type='date_from',
+              description='filter all gtfs related records on this date'),
+          gtfs_date_to: datetime.date = common.doc_param(
+              'gtfs date', filter_type='date_to',
+              description='filter all gtfs related records on this date'),
+          order_by: str = common.param_order_by(default=''),
           ):
     return common.get_list(
         model.SiriRideStop, limit, offset,
@@ -148,8 +156,12 @@ def list_(limit: int = common.param_limit(),
             {'type': 'lower_or_equal', 'field': model.GtfsStop.lat, 'value': gtfs_stop__lat__lower_or_equal},
             {'type': 'greater_or_equal', 'field': model.GtfsStop.lon, 'value': gtfs_stop__lon__greater_or_equal},
             {'type': 'lower_or_equal', 'field': model.GtfsStop.lon, 'value': gtfs_stop__lon__lower_or_equal},
-            {'type': 'datetime_from', 'field': model.GtfsRoute.date, 'value': gtfs_route__date_from},
-            {'type': 'datetime_to', 'field': model.GtfsRoute.date, 'value': gtfs_route__date_to},
+            {'type': 'datetime_from', 'field': model.GtfsRoute.date, 'value': gtfs_date_from},
+            {'type': 'datetime_to', 'field': model.GtfsRoute.date, 'value': gtfs_date_to},
+            {'type': 'datetime_from', 'field': model.GtfsStop.date, 'value': gtfs_date_from},
+            {'type': 'datetime_to', 'field': model.GtfsStop.date, 'value': gtfs_date_to},
+            {'type': 'datetime_from', 'field': model.SiriRide.scheduled_start_time, 'value': siri_ride__scheduled_start_time_from},
+            {'type': 'datetime_to', 'field': model.SiriRide.scheduled_start_time, 'value': siri_ride__scheduled_start_time_to},
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
