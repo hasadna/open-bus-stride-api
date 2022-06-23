@@ -17,7 +17,6 @@ class GtfsRidePydanticModel(pydantic.BaseModel):
     journey_ref: str
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'gtfs ride'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'gtfs'
@@ -26,7 +25,7 @@ SQL_MODEL = GtfsRide
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           gtfs_route_id: int = common.doc_param('gtfs route id', filter_type='equals'),
@@ -37,7 +36,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'equals', 'field': GtfsRide.gtfs_route_id, 'value': gtfs_route_id},
             {'type': 'prefix', 'field': GtfsRide.journey_ref, 'value': journey_ref_prefix},
         ],
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 

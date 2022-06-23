@@ -25,11 +25,12 @@ class RouteTimetablePydanticModel(pydantic.BaseModel):
     gtfs_line_start_time: datetime.datetime = None
     gtfs_ride_id: str = None
 
-LIST_MAX_LIMIT = 100
+
 WHAT_PLURAL = """the stops timetable of a given bus.
 Currently, only planned time (gtfs) is returned for every stop"""
 TAG = 'user cases'
 PYDANTIC_MODEL = RouteTimetablePydanticModel
+
 
 def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
     return (
@@ -52,7 +53,7 @@ def _convert_to_dict(obj):
                                        gtfs_ride_id=gtfs_ride.id).__dict__
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           planned_start_time_date_from: datetime.datetime = common.doc_param('planned_start_time', 'datetime_from', description='Set a time range to get the timetable of a specific ride'),
@@ -70,7 +71,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
         ],
         post_session_query_hook=_post_session_query_hook,
         convert_to_dict=_convert_to_dict,
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
         skip_order_by=True,
     )

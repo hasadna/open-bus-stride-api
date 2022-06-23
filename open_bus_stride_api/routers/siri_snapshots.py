@@ -29,7 +29,6 @@ class SiriSnapshotPydanticModel(pydantic.BaseModel):
     created_by: str = None
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'siri snapshot'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'siri'
@@ -38,7 +37,7 @@ SQL_MODEL = SiriSnapshot
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           snapshot_id_prefix: str = common.doc_param('snapshot id', filter_type='prefix'),
@@ -49,7 +48,6 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
             {'type': 'prefix', 'field': SiriSnapshot.snapshot_id, 'value': snapshot_id_prefix},
         ],
         order_by=order_by,
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 

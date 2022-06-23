@@ -18,7 +18,6 @@ class GtfsAgencyPydanticModel(pydantic.BaseModel):
     agency_name: str
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'gtfs agency'
 WHAT_PLURAL = 'gtfs agencies'
 TAG = 'gtfs'
@@ -26,14 +25,13 @@ PYDANTIC_MODEL = GtfsAgencyPydanticModel
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
           date_to: datetime.date = common.doc_param('date', filter_type='date_to')):
     with get_session() as session:
         if not limit:
-            limit = LIST_MAX_LIMIT
-        assert limit <= LIST_MAX_LIMIT, f'max allowed limit is {LIST_MAX_LIMIT}'
+            limit = common.DEFAULT_LIMIT
         if not offset:
             offset = 0
         res = []

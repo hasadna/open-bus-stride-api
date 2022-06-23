@@ -28,7 +28,6 @@ class SiriRidePydanticModel(pydantic.BaseModel):
     gtfs_ride_id: int = None
 
 
-LIST_MAX_LIMIT = 100
 WHAT_SINGULAR = 'siri ride'
 WHAT_PLURAL = f'{WHAT_SINGULAR}s'
 TAG = 'siri'
@@ -41,7 +40,7 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(max_limit=LIST_MAX_LIMIT),
+def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
           get_count: bool = common.param_get_count(),
           siri_route_ids: str = common.doc_param('siri route ids', filter_type='list'),
@@ -67,7 +66,6 @@ def list_(limit: int = common.param_limit(max_limit=LIST_MAX_LIMIT),
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
     )
 
