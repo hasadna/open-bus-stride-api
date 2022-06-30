@@ -12,5 +12,6 @@ else:
 setup(
     name='open-bus-stride-api',
     version=version,
-    packages=find_packages(exclude=['contrib', 'docs', 'tests*'])
+    packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
+    include_package_data=True,
 )
