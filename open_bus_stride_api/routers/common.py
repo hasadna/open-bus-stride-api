@@ -75,7 +75,9 @@ def get_list(*args, convert_to_dict=None, **kwargs):
             first_items = list(itertools.islice(q_iterator, QUERY_PAGE_SIZE + 1))
             if len(first_items) <= QUERY_PAGE_SIZE:
                 debug_print(f'got {len(first_items)} items - returning without streaming')
-                return [post_process_response_obj(obj, convert_to_dict) for obj in first_items]
+                data = [post_process_response_obj(obj, convert_to_dict) for obj in first_items]
+                session.close()
+                return data
             else:
                 debug_print(f'got {len(first_items)} items - returning using streaming')
                 return fastapi.responses.StreamingResponse(
