@@ -66,16 +66,16 @@ SiriRideStopWithRelatedPydanticModel = common.pydantic_create_model_with_related
 
 
 def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
+    session_query = session_query.select_from(model.SiriRideStop)
+    session_query = siri_ride_related_model.add_session_query_entities(model.SiriRide, session_query)
+    session_query = siri_stop_related_model.add_session_query_entities(model.SiriStop, session_query)
+    session_query = gtfs_stop_related_model.add_session_query_entities(model.GtfsStop, session_query)
+    session_query = nearest_siri_vehicle_location_related_model.add_session_query_entities(model.SiriVehicleLocation, session_query)
+    session_query = gtfs_ride_stop_related_model.add_session_query_entities(model.GtfsRideStop, session_query)
+    session_query = gtfs_ride_related_model.add_session_query_entities(model.GtfsRide, session_query)
+    session_query = gtfs_route_related_model.add_session_query_entities(model.GtfsRoute, session_query)
     return (
         session_query
-        .select_from(model.SiriRideStop)
-        .add_entity(model.SiriRide)
-        .add_entity(model.SiriStop)
-        .add_entity(model.GtfsStop)
-        .add_entity(model.SiriVehicleLocation)
-        .add_entity(model.GtfsRideStop)
-        .add_entity(model.GtfsRide)
-        .add_entity(model.GtfsRoute)
         .join(model.SiriRide)
         .join(model.SiriStop)
         .join(model.GtfsStop, model.SiriRideStop.gtfs_stop_id == model.GtfsStop.id)
@@ -88,19 +88,6 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
         )
         .join(model.GtfsRoute, model.GtfsRide.gtfs_route_id == model.GtfsRoute.id)
     )
-
-
-def _convert_to_dict(obj: model.SiriRideStop):
-    siri_ride_stop, siri_ride, siri_stop, gtfs_stop, nearest_siri_vehicle_location, gtfs_ride_stop, gtfs_ride, gtfs_route = obj
-    res = siri_ride_stop.__dict__
-    siri_stop_related_model.add_orm_obj_to_dict_res(siri_stop, res)
-    siri_ride_related_model.add_orm_obj_to_dict_res(siri_ride, res)
-    gtfs_stop_related_model.add_orm_obj_to_dict_res(gtfs_stop, res)
-    nearest_siri_vehicle_location_related_model.add_orm_obj_to_dict_res(nearest_siri_vehicle_location, res)
-    gtfs_ride_stop_related_model.add_orm_obj_to_dict_res(gtfs_ride_stop, res)
-    gtfs_ride_related_model.add_orm_obj_to_dict_res(gtfs_ride, res)
-    gtfs_route_related_model.add_orm_obj_to_dict_res(gtfs_route, res)
-    return res
 
 
 @common.router_list(router, TAG, SiriRideStopWithRelatedPydanticModel, WHAT_PLURAL)
@@ -165,11 +152,14 @@ def list_(limit: int = common.param_limit(),
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
-        convert_to_dict=_convert_to_dict,
         get_count=get_count,
+        pydantic_model=PYDANTIC_MODEL,
     )
 
 
 @common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
 def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
-    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)
+    return common.get_item(
+        SQL_MODEL, SQL_MODEL.id, id,
+        pydantic_model=PYDANTIC_MODEL,
+    )

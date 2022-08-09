@@ -67,9 +67,13 @@ def list_(limit: int = common.param_limit(),
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
         get_count=get_count,
+        pydantic_model=PYDANTIC_MODEL,
     )
 
 
 @common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
 def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
-    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)
+    return common.get_item(
+        SQL_MODEL, SQL_MODEL.id, id,
+        pydantic_model=PYDANTIC_MODEL,
+    )

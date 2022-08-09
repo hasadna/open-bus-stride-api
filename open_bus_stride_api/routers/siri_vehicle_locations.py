@@ -49,6 +49,7 @@ siri_snapshot_related_model = common.PydanticRelatedModel(
     include_field_names=['snapshot_id']
 )
 
+
 SiriVehicleLocationWithRelatedPydanticModel = common.pydantic_create_model_with_related(
     'SiriVehicleLocationWithRelatedPydanticModel',
     SiriVehicleLocationPydanticModel,
@@ -57,26 +58,20 @@ SiriVehicleLocationWithRelatedPydanticModel = common.pydantic_create_model_with_
     siri_ride_related_model,
 )
 
+
 def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
+    session_query = session_query.select_from(model.SiriVehicleLocation)
+    session_query = siri_snapshot_related_model.add_session_query_entities(model.SiriSnapshot, session_query)
+    session_query = siri_ride_related_model.add_session_query_entities(model.SiriRide, session_query)
+    session_query = siri_route_related_model.add_session_query_entities(model.SiriRoute, session_query)
     return (
         session_query
-        .select_from(model.SiriVehicleLocation)
-        .add_entity(model.SiriSnapshot)
-        .add_entity(model.SiriRide)
-        .add_entity(model.SiriRoute)
         .join(model.SiriRideStop, model.SiriRideStop.id == model.SiriVehicleLocation.siri_ride_stop_id)
         .join(model.SiriRide, model.SiriRide.id == model.SiriRideStop.siri_ride_id)
         .join(model.SiriRoute, model.SiriRoute.id == model.SiriRide.siri_route_id)
         .join(model.SiriSnapshot, model.SiriSnapshot.id == model.SiriVehicleLocation.siri_snapshot_id)
     )
 
-def _convert_to_dict(obj: model.SiriVehicleLocation):
-    siri_vehicle_location, siri_snapshot, siri_ride, siri_route = obj
-    res = siri_vehicle_location.__dict__
-    siri_snapshot_related_model.add_orm_obj_to_dict_res(siri_snapshot, res)
-    siri_route_related_model.add_orm_obj_to_dict_res(siri_route, res)
-    siri_ride_related_model.add_orm_obj_to_dict_res(siri_ride, res)
-    return res
 
 @common.router_list(router, TAG, SiriVehicleLocationWithRelatedPydanticModel, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(),
@@ -120,11 +115,14 @@ def list_(limit: int = common.param_limit(),
         ],
         order_by=order_by,
         post_session_query_hook=_post_session_query_hook,
-        convert_to_dict=_convert_to_dict,
         get_count=get_count,
+        pydantic_model=PYDANTIC_MODEL,
     )
 
 
 @common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
 def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
-    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)
+    return common.get_item(
+        SQL_MODEL, SQL_MODEL.id, id,
+        pydantic_model=PYDANTIC_MODEL,
+    )

@@ -1,4 +1,3 @@
-import typing
 import datetime
 
 import pydantic
@@ -44,9 +43,13 @@ def list_(limit: int = common.param_limit(),
             {'type': 'in', 'field': model.GtfsRideStop.gtfs_ride_id, 'value': gtfs_ride_ids},
         ],
         get_count=get_count,
+        pydantic_model=PYDANTIC_MODEL,
     )
 
 
 @common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
 def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
-    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)
+    return common.get_item(
+        SQL_MODEL, SQL_MODEL.id, id,
+        pydantic_model=PYDANTIC_MODEL,
+    )

@@ -39,7 +39,13 @@ def debug_print(*args):
 
 
 def post_process_response_obj(obj, convert_to_dict):
-    return obj.__dict__ if convert_to_dict is None else convert_to_dict(obj)
+    if convert_to_dict is None:
+        if hasattr(obj, '__dict__'):
+            return obj.__dict__
+        else:
+            return obj._asdict()
+    else:
+        return convert_to_dict(obj)
 
 
 def streaming_response_iterator(session, first_items, q_iterator, convert_to_dict):
@@ -89,9 +95,29 @@ def get_list(*args, convert_to_dict=None, **kwargs):
         raise
 
 
+def get_base_session_query(session, db_model, pydantic_model=...):
+    # we have to set select fields for queries otherwise database migrations which add fields
+    # cause the api to fail with "no such column" because it tries to select all fields which
+    # are defined in stride db model
+    assert pydantic_model is not ...
+    if pydantic_model is None:
+        # This is not recommended, because it relies on db model matching the DB migrations and
+        # in some cases they may be mismatched, if migrations failed to run or if api was updated
+        # before migrations were applied.
+        session_query = session.query(db_model)
+    else:
+        session_query = session.query(*[
+            getattr(db_model, key)
+            for key
+            in pydantic_model.schema()['properties'].keys()
+        ])
+    return session_query
+
+
 def get_list_query(session, db_model, limit, offset, filters=None, default_limit=DEFAULT_LIMIT,
                    order_by=None, skip_order_by=False, get_count=False,
-                   post_session_query_hook=None):
+                   post_session_query_hook=None, pydantic_model=...,
+                   get_base_session_query_callback=None):
     debug_print(f'get_list_query: limit={limit}, offset={offset}, order_by={order_by}')
     if get_count:
         limit, offset, default_limit, order_by = None, None, None, None
@@ -101,7 +127,10 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
         limit = int(limit)
     if filters is None:
         filters = []
-    session_query = session.query(db_model)
+    if get_base_session_query_callback is None:
+        session_query = get_base_session_query(session, db_model, pydantic_model)
+    else:
+        session_query = get_base_session_query_callback(session)
     if post_session_query_hook:
         session_query = post_session_query_hook(session_query)
     for filter in filters:
@@ -196,9 +225,11 @@ def get_list_query_filter_lower_or_equal(session_query, filters, filter):
     return session_query
 
 
-def get_item(db_model, field, value):
+def get_item(db_model, field, value, pydantic_model=...):
     with get_session() as session:
-        return session.query(db_model).filter(field == value).one().__dict__
+        session_query = get_base_session_query(session, db_model, pydantic_model)
+        obj = session_query.filter(field == value).one()
+        return post_process_response_obj(obj, None)
 
 
 class PydanticRelatedModel():
@@ -220,12 +251,12 @@ class PydanticRelatedModel():
                 default = None
             kwargs['{}{}'.format(self.field_name_prefix, name)] = (field.type_, default)
 
-    def add_orm_obj_to_dict_res(self, orm_obj, res):
-        if orm_obj:
-            for name in self.pydantic_model.__fields__.keys():
-                if self.exclude_field_names and name in self.exclude_field_names:
-                    continue
-                res['{}{}'.format(self.field_name_prefix, name)] = getattr(orm_obj, name)
+    def add_session_query_entities(self, db_model, session_query):
+        for name in self.pydantic_model.__fields__.keys():
+            if self.exclude_field_names and name in self.exclude_field_names:
+                continue
+            session_query = session_query.add_entity(getattr(db_model, name).label('{}{}'.format(self.field_name_prefix, name)))
+        return session_query
 
 
 def pydantic_create_model_with_related(model_name, base_model, *related_models):

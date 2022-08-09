@@ -1,4 +1,3 @@
-import typing
 import datetime
 
 import pydantic
@@ -32,25 +31,33 @@ TAG = 'user cases'
 PYDANTIC_MODEL = RouteTimetablePydanticModel
 
 
+def get_base_session_query(session):
+    return session.query(
+        *[getattr(model.GtfsStop, f) for f in ['id', 'name', 'city', 'lat', 'lon']]
+    )
+
+
 def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
     return (
         session_query
         .select_from(model.GtfsStop)
-        .add_entity(model.GtfsRideStop)
-        .add_entity(model.GtfsRide)
-        .add_entity(model.GtfsRoute)
+        .add_entity(model.GtfsRideStop.arrival_time)
+        .add_entity(model.GtfsRide.start_time)
+        .add_entity(model.GtfsRide.id.label('gtfs_ride_id'))
+        .add_entity(model.GtfsRoute.line_ref)
         .join(model.GtfsRideStop, model.GtfsRideStop.gtfs_stop_id == model.GtfsStop.id)
         .join(model.GtfsRide, model.GtfsRide.id == model.GtfsRideStop.gtfs_ride_id)
         .join(model.GtfsRoute, model.GtfsRoute.id == model.GtfsRide.gtfs_route_id)
         .order_by((sqlalchemy.asc)(model.GtfsRideStop.arrival_time))
     )
 
+
 def _convert_to_dict(obj):
-    gtfs_stop, gtfs_ride_stop, gtfs_ride, gtfs_route = obj
-    return RouteTimetablePydanticModel(id=gtfs_stop.id, name=gtfs_stop.name, city=gtfs_stop.city, lat=gtfs_stop.lat,
-                                       lon=gtfs_stop.lon, planned_arrival_time=gtfs_ride_stop.arrival_time,
-                                       gtfs_line_ref=gtfs_route.line_ref, gtfs_line_start_time=gtfs_ride.start_time,
-                                       gtfs_ride_id=gtfs_ride.id).__dict__
+    return RouteTimetablePydanticModel(id=obj.id, name=obj.name, city=obj.city, lat=obj.lat,
+                                       lon=obj.lon, planned_arrival_time=obj.arrival_time,
+                                       gtfs_line_ref=obj.line_ref, gtfs_line_start_time=obj.start_time,
+                                       gtfs_ride_id=obj.gtfs_ride_id).__dict__
+
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(),
@@ -73,4 +80,5 @@ def list_(limit: int = common.param_limit(),
         convert_to_dict=_convert_to_dict,
         get_count=get_count,
         skip_order_by=True,
+        get_base_session_query_callback=get_base_session_query,
     )

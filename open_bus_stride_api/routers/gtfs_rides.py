@@ -1,5 +1,3 @@
-import typing
-
 import pydantic
 from fastapi import APIRouter
 
@@ -37,9 +35,13 @@ def list_(limit: int = common.param_limit(),
             {'type': 'prefix', 'field': GtfsRide.journey_ref, 'value': journey_ref_prefix},
         ],
         get_count=get_count,
+        pydantic_model=PYDANTIC_MODEL,
     )
 
 
 @common.router_get(router, TAG, PYDANTIC_MODEL, WHAT_SINGULAR)
 def get_(id: int = common.param_get_id(WHAT_SINGULAR)):
-    return common.get_item(SQL_MODEL, SQL_MODEL.id, id)
+    return common.get_item(
+        SQL_MODEL, SQL_MODEL.id, id,
+        pydantic_model=PYDANTIC_MODEL,
+    )
