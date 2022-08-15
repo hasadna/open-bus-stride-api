@@ -7,7 +7,7 @@ def assert_router_list(client, path, params=None, get_get_count_params=None):
     res = client.get(path, params=params)
     assert res.status_code == 200
     items = res.json()
-    assert 1 <= len(items) <= DEFAULT_LIMIT
+    assert 1 <= len(items) <= DEFAULT_LIMIT, f'invalid number of items ({len(items)})'
     if get_get_count_params:
         get_count_params = {**get_get_count_params(items), 'get_count': 'true'}
         res = client.get(path, params={**(params if params else {}), **get_count_params})
