@@ -1,6 +1,7 @@
 import os
 import json
 import typing
+import inspect
 import itertools
 
 import fastapi
@@ -268,16 +269,19 @@ def pydantic_create_model_with_related(model_name, base_model, *related_models):
     return pydantic.create_model(model_name, **kwargs)
 
 
-def param_limit(default_limit=DEFAULT_LIMIT):
-    return fastapi.Query(
-        None,
-        description=f'Limit the number of returned results. '
-                    f'If not specified will limit to {default_limit} results. '
-                    f'To get more results, you can either use the offset param, '
-                    f'alternatively - set the limit to -1 and use http streaming '
-                    f'with compatible json streaming decoder to get all results, '
-                    f'this method can fetch up to a maximum of {MAX_LIMIT} results.'
-    )
+def param_limit(default_limit=DEFAULT_LIMIT, as_RouteParam=False):
+    if as_RouteParam:
+        return RouteParam('limit', int, param_limit(default_limit=default_limit))
+    else:
+        return fastapi.Query(
+            None,
+            description=f'Limit the number of returned results. '
+                        f'If not specified will limit to {default_limit} results. '
+                        f'To get more results, you can either use the offset param, '
+                        f'alternatively - set the limit to -1 and use http streaming '
+                        f'with compatible json streaming decoder to get all results, '
+                        f'this method can fetch up to a maximum of {MAX_LIMIT} results.'
+        )
 
 
 def doc_param(what_singular: str, filter_type: str, description: str = "", example: str = "", default: str = None):
@@ -289,16 +293,41 @@ def doc_param(what_singular: str, filter_type: str, description: str = "", examp
     return fastapi.Query(default, description=description)
 
 
-def param_offset():
-    return fastapi.Query(None, description='Item number to start returning results from. '
-                                           'Use in combination with limit for pagination, '
-                                           'alternatively, don\'t set offset, set limit to -1 '
-                                           'and use http streaming with compatible json streaming '
-                                           f'decoder to get all results up to a maximum of {MAX_LIMIT} results.')
+class DocParam:
+
+    def __init__(self, what_singular: str, filter_type: str, description: str = "", example: str = "", default: str = None):
+        self.what_singular = what_singular
+        self.filter_type = filter_type
+        self.description = description
+        self.example = example
+        self.default = default
+
+    def get_doc_param(self):
+        return doc_param(self.what_singular, self.filter_type, self.description, self.example, self.default)
+
+    def get_with_prefix(self, prefix):
+        return DocParam(
+            f'{prefix} {self.what_singular}',
+            self.filter_type, self.description, self.example, self.default
+        )
 
 
-def param_get_count():
-    return fastapi.Query(False, description='Set to "true" to only get the total number of results for given filters. limit/offset/order parameters will be ignored.')
+def param_offset(as_RouteParam=False):
+    if as_RouteParam:
+        return RouteParam('offset', int, param_offset())
+    else:
+        return fastapi.Query(None, description='Item number to start returning results from. '
+                                               'Use in combination with limit for pagination, '
+                                               'alternatively, don\'t set offset, set limit to -1 '
+                                               'and use http streaming with compatible json streaming '
+                                               f'decoder to get all results up to a maximum of {MAX_LIMIT} results.')
+
+
+def param_get_count(as_RouteParam=False):
+    if as_RouteParam:
+        return RouteParam('get_count', bool, param_get_count())
+    else:
+        return fastapi.Query(False, description='Set to "true" to only get the total number of results for given filters. limit/offset/order parameters will be ignored.')
 
 
 def param_filter_list(what_singular, example='1,2,3'):
@@ -343,15 +372,63 @@ def param_filter_lower_or_equal(what_singular, example):
     return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value. Example value: {example}')
 
 
-def param_order_by(default='id asc'):
-    return fastapi.Query(
-        default,
-        description=f'Order of the results. Comma-separated list of fields and direction. e.g. "field1 asc,field2 desc".'
-    )
+def param_order_by(default='id asc', as_RouteParam=False):
+    if as_RouteParam:
+        return RouteParam('order_by', str, param_order_by(default=default))
+    else:
+        return fastapi.Query(
+            default,
+            description=f'Order of the results. Comma-separated list of fields and direction. e.g. "field1 asc,field2 desc".'
+        )
 
 
 def router_list(router, tag, pydantic_model, what_plural):
     return router.get("/list", tags=[tag], response_model=typing.List[pydantic_model], description=f'List of {what_plural}.')
+
+
+class RouteParam():
+
+    def __init__(self,  name, annotation, param, filter_kwargs=None):
+        self.name = name
+        self.annotation = annotation
+        self.param = param
+        self.filter_kwargs = filter_kwargs
+
+    def get_signature_parameter(self):
+        return inspect.Parameter(
+            self.name,
+            inspect.Parameter.KEYWORD_ONLY,
+            default=self.param.get_doc_param() if isinstance(self.param, DocParam) else self.param,
+            annotation=self.annotation,
+        )
+
+    def get_filter(self, kwargs):
+        return {**self.filter_kwargs, 'value': kwargs[self.name]}
+
+    def get_with_prefix(self, name_prefix, doc_param_prefix):
+        assert isinstance(self.param, DocParam)
+        return RouteParam(
+            f'{name_prefix}{self.name}', self.annotation,
+            self.param.get_with_prefix(doc_param_prefix), self.filter_kwargs
+        )
+
+
+def get_route_params_with_prefix(name_prefix, doc_param_prefix, route_params):
+    return [
+        route_param.get_with_prefix(name_prefix, doc_param_prefix) for route_param in route_params
+    ]
+
+
+def add_api_router_list(router, tag, pydantic_model, what_plural, route_params):
+
+    def _decorator(func):
+        func.__signature__ = inspect.signature(func).replace(parameters=[
+            route_param.get_signature_parameter() for route_param in route_params
+        ])
+        router.add_api_route("/list", func, tags=[tag], response_model=typing.List[pydantic_model], description=f'List of {what_plural}.')
+        return func
+
+    return _decorator
 
 
 def router_get(router, tag, pydantic_model, what_singular):
@@ -361,4 +438,3 @@ def router_get(router, tag, pydantic_model, what_singular):
 
 def param_get_id(what_singular):
     return fastapi.Query(..., description=f'{what_singular} id to get')
-

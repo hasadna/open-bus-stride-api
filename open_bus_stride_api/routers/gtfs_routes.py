@@ -32,39 +32,73 @@ PYDANTIC_MODEL = GtfsRoutePydanticModel
 SQL_MODEL = GtfsRoute
 
 
-@common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(),
-          offset: int = common.param_offset(),
-          get_count: bool = common.param_get_count(),
-          date_from: datetime.date = common.doc_param('date', filter_type='date_from'),
-          date_to: datetime.date = common.doc_param('date', filter_type='date_to'),
-          line_refs: str = common.doc_param('line ref', filter_type='list'),
-          operator_refs: str = common.doc_param('operator ref', 'list', description='Agency identifier. To get it, first query gtfs_agencies.', example="3 for Eged"),
-          route_short_name: str = common.doc_param('route short name', 'equals', description='Line number.', example="480"),
-          route_long_name_contains: str = common.doc_param('route long name', filter_type='contains'),
-          route_mkt: str = common.doc_param('route mkt', filter_type='equals'),
-          route_direction: str = common.doc_param('route direction', filter_type='equals'),
-          route_alternative: str = common.doc_param('route alternative', filter_type='equals'),
-          agency_name: str = common.doc_param('agency name', filter_type='equals'),
-          route_type: str = common.doc_param('route type', filter_type='equals'),
-          order_by: str = common.param_order_by()):
+gtfs_route_filter_params = [
+    common.RouteParam(
+        'date_from', datetime.date, common.DocParam('date', filter_type='date_from'),
+        {'type': 'datetime_from', 'field': GtfsRoute.date}
+    ),
+    common.RouteParam(
+        'date_to', datetime.date, common.DocParam('date', filter_type='date_to'),
+        {'type': 'datetime_to', 'field': GtfsRoute.date}
+    ),
+    common.RouteParam(
+        'line_refs', str, common.DocParam('line ref', filter_type='list'),
+        {'type': 'in', 'field': GtfsRoute.line_ref},
+    ),
+    common.RouteParam(
+        'operator_refs', str, common.DocParam('operator ref', 'list', description='Agency identifier. To get it, first query gtfs_agencies.', example="3 for Eged"),
+        {'type': 'in', 'field': GtfsRoute.operator_ref},
+    ),
+    common.RouteParam(
+        'route_short_name', str, common.DocParam('route short name', 'equals', description='Line number.', example="480"),
+        {'type': 'equals', 'field': GtfsRoute.route_short_name},
+    ),
+    common.RouteParam(
+        'route_long_name_contains', str, common.DocParam('route long name', filter_type='contains'),
+        {'type': 'contains', 'field': GtfsRoute.route_long_name},
+    ),
+    common.RouteParam(
+        'route_mkt', str, common.DocParam('route mkt', filter_type='equals'),
+        {'type': 'equals', 'field': GtfsRoute.route_mkt},
+    ),
+    common.RouteParam(
+        'route_direction', str, common.DocParam('route direction', filter_type='equals'),
+        {'type': 'equals', 'field': GtfsRoute.route_direction}
+    ),
+    common.RouteParam(
+        'route_alternative', str, common.DocParam('route alternative', filter_type='equals'),
+        {'type': 'equals', 'field': GtfsRoute.route_alternative},
+    ),
+    common.RouteParam(
+        'agency_name', str, common.DocParam('agency name', filter_type='equals'),
+        {'type': 'equals', 'field': GtfsRoute.agency_name},
+    ),
+    common.RouteParam(
+        'route_type', str, common.DocParam('route type', filter_type='equals'),
+        {'type': 'equals', 'field': GtfsRoute.route_type},
+    ),
+]
+
+
+gtfs_route_list_params = [
+    common.param_limit(as_RouteParam=True),
+    common.param_offset(as_RouteParam=True),
+    common.param_get_count(as_RouteParam=True),
+    *gtfs_route_filter_params,
+    common.param_order_by(as_RouteParam=True),
+]
+
+
+@common.add_api_router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL, gtfs_route_list_params)
+def list_(**kwargs):
     return common.get_list(
-        GtfsRoute, limit, offset,
+        GtfsRoute, kwargs['limit'], kwargs['offset'],
         [
-            {'type': 'datetime_from', 'field': GtfsRoute.date, 'value': date_from},
-            {'type': 'datetime_to', 'field': GtfsRoute.date, 'value': date_to},
-            {'type': 'in', 'field': GtfsRoute.line_ref, 'value': line_refs},
-            {'type': 'in', 'field': GtfsRoute.operator_ref, 'value': operator_refs},
-            {'type': 'equals', 'field': GtfsRoute.route_short_name, 'value': route_short_name},
-            {'type': 'contains', 'field': GtfsRoute.route_long_name, 'value': route_long_name_contains},
-            {'type': 'equals', 'field': GtfsRoute.route_mkt, 'value': route_mkt},
-            {'type': 'equals', 'field': GtfsRoute.route_direction, 'value': route_direction},
-            {'type': 'equals', 'field': GtfsRoute.route_alternative, 'value': route_alternative},
-            {'type': 'equals', 'field': GtfsRoute.agency_name, 'value': agency_name},
-            {'type': 'equals', 'field': GtfsRoute.route_type, 'value': route_type},
+            route_param.get_filter(kwargs)
+            for route_param in gtfs_route_filter_params
         ],
-        order_by=order_by,
-        get_count=get_count,
+        order_by=kwargs['order_by'],
+        get_count=kwargs['get_count'],
         pydantic_model=PYDANTIC_MODEL,
     )
 
