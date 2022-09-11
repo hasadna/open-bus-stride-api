@@ -5,6 +5,7 @@ import traceback
 from fastapi import FastAPI, Request
 from sqlalchemy.exc import NoResultFound
 from fastapi.responses import JSONResponse
+from starlette.middleware.cors import CORSMiddleware
 
 from .version import VERSION
 from .routers import ROUTER_NAMES
@@ -31,6 +32,10 @@ for router_name in ROUTER_NAMES:
         prefix='/{}'.format(router_name)
     )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins='*',
+)
 
 @app.get("/", include_in_schema=False)
 async def root():
