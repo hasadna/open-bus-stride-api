@@ -23,6 +23,12 @@ Currently, only planned time (gtfs) is returned for every stop"""
 TAG = 'user cases'
 PYDANTIC_MODEL = StopArrivalPydanticModel
 
+
+def get_base_session_query(session):
+    return session.query(
+        *[getattr(model.SiriVehicleLocation, f) for f in ['recorded_at_time']]
+    )
+
 def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
     return (
         session_query
@@ -54,7 +60,7 @@ def list_(limit: int = common.param_limit(LIST_MAX_LIMIT),
         ],
         post_session_query_hook=_post_session_query_hook,
         convert_to_dict=_convert_to_dict,
-        max_limit=LIST_MAX_LIMIT,
         get_count=get_count,
         skip_order_by=True,
+        get_base_session_query_callback=get_base_session_query,
     )
