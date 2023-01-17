@@ -6,7 +6,7 @@ import sqlalchemy.orm
 
 from open_bus_stride_db import model
 
-from . import common, gtfs_rides, gtfs_routes
+from . import common, gtfs_rides, gtfs_routes, siri_routes
 
 
 router = APIRouter()
@@ -35,6 +35,9 @@ PYDANTIC_MODEL = SiriRidePydanticModel
 SQL_MODEL = model.SiriRide
 
 
+siri_route_related_model = common.PydanticRelatedModel(
+    'siri_route__', siri_routes.SiriRoutePydanticModel, ['id']
+)
 gtfs_ride_related_model = common.PydanticRelatedModel(
     'gtfs_ride__', gtfs_rides.GtfsRidePydanticModel, ['id']
 )
@@ -46,6 +49,7 @@ gtfs_route_related_model = common.PydanticRelatedModel(
 SiriRideWithRelatedPydanticModel = common.pydantic_create_model_with_related(
     'SiriRideWithRelatedPydanticModel',
     SiriRidePydanticModel,
+    siri_route_related_model,
     gtfs_ride_related_model,
     gtfs_route_related_model,
 )
@@ -53,10 +57,12 @@ SiriRideWithRelatedPydanticModel = common.pydantic_create_model_with_related(
 
 def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
     session_query = session_query.select_from(model.SiriRide)
+    session_query = siri_route_related_model.add_session_query_entities(model.SiriRoute, session_query)
     session_query = gtfs_ride_related_model.add_session_query_entities(model.GtfsRide, session_query)
     session_query = gtfs_route_related_model.add_session_query_entities(model.GtfsRoute, session_query)
     return (
         session_query
+        .join(model.SiriRoute, model.SiriRide.siri_route_id == model.SiriRoute.id)
         .join(model.GtfsRide, model.SiriRide.gtfs_ride_id == model.GtfsRide.id)
         .join(model.GtfsRoute, model.GtfsRide.gtfs_route_id == model.GtfsRoute.id)
     )
