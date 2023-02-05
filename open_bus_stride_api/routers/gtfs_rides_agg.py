@@ -62,7 +62,7 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
         'date_from': date_from,
         'date_to': date_to,
     }
-    return sql_route.list_(sql, sql_params, DEFAULT_LIMIT, limit, offset, get_count, 'gtfs_route_date asc, gtfs_route_id asc')
+    return sql_route.list_(sql, sql_params, DEFAULT_LIMIT, limit, offset, get_count, 'gtfs_route_date asc, gtfs_route_id asc', False)
 
 
 @router.get("/group_by", tags=[TAG], response_model=typing.List[GROUP_BY_PYDANTIC_MODEL], description=f'{WHAT_SINGULAR} grouped by given fields.')
