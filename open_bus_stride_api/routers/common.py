@@ -115,6 +115,39 @@ def get_base_session_query(session, db_model, pydantic_model=...):
     return session_query
 
 
+def process_list_query_order_by_limit_offset(skip_order_by, order_by, get_count, limit, offset, skip_order_by_id_field=False):
+    order_by_args = None
+    res_limit = None
+    res_offset = None
+    if skip_order_by:
+        assert not order_by
+    else:
+        order_by_args = []
+        order_by_has_id_field = False
+        if order_by:
+            for ob in order_by.split(','):
+                ob = ob.strip()
+                if not ob:
+                    continue
+                ob = ob.split()
+                if len(ob) == 1:
+                    field_name = ob[0]
+                    direction = None
+                else:
+                    field_name, direction = ob
+                if field_name.lower() == 'id':
+                    order_by_has_id_field = True
+                order_by_args.append((('desc' if direction == 'desc' else 'asc'), field_name))
+        if not get_count:
+            if limit != -1 and not order_by_has_id_field and not skip_order_by_id_field:
+                order_by_args.append(('desc', 'id'))
+    if limit and limit != -1:
+        res_limit = limit
+    if offset:
+        res_offset = offset
+    return order_by_args, res_limit, res_offset
+
+
 def get_list_query(session, db_model, limit, offset, filters=None, default_limit=DEFAULT_LIMIT,
                    order_by=None, skip_order_by=False, get_count=False,
                    post_session_query_hook=None, pydantic_model=...,
@@ -136,33 +169,16 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
         session_query = post_session_query_hook(session_query)
     for filter in filters:
         session_query = globals()['get_list_query_filter_{}'.format(filter['type'])](session_query, filters, filter)
-    if skip_order_by:
-        assert not order_by
-    else:
+    q_order_by_args, q_limit, q_offset = process_list_query_order_by_limit_offset(skip_order_by, order_by, get_count, limit, offset)
+    if q_order_by_args is not None:
         order_by_args = []
-        order_by_has_id_field = False
-        if order_by:
-            for ob in order_by.split(','):
-                ob = ob.strip()
-                if not ob:
-                    continue
-                ob = ob.split()
-                if len(ob) == 1:
-                    field_name = ob[0]
-                    direction = None
-                else:
-                    field_name, direction = ob
-                if field_name.lower() == 'id':
-                    order_by_has_id_field = True
-                order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
-        if not get_count:
-            if limit != -1 and not order_by_has_id_field:
-                order_by_args.append(sqlalchemy.desc(getattr(db_model, 'id')))
-            session_query = session_query.order_by(*order_by_args)
-    if limit and limit != -1:
-        session_query = session_query.limit(limit)
-    if offset:
-        session_query = session_query.offset(offset)
+        for direction, field_name in q_order_by_args:
+            order_by_args.append((sqlalchemy.desc if direction == 'desc' else sqlalchemy.asc)(getattr(db_model, field_name)))
+        session_query = session_query.order_by(*order_by_args)
+    if q_limit is not None:
+        session_query = session_query.limit(q_limit)
+    if q_offset is not None:
+        session_query = session_query.offset(q_offset)
     return session_query
 
 
