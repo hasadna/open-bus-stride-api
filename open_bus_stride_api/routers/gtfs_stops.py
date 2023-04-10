@@ -28,6 +28,28 @@ PYDANTIC_MODEL = GtfsStopPydanticModel
 SQL_MODEL = GtfsStop
 
 
+# This is only used by other routers to include the stop filters
+# TODO: Refactor the router_list below to use this variable
+gtfs_stop_filter_params = [
+    common.RouteParam(
+        'date_from', datetime.date, common.DocParam('date', filter_type='date_from'),
+        {'type': 'datetime_from', 'field': GtfsStop.date},
+    ),
+    common.RouteParam(
+        'date_to', datetime.date, common.DocParam('date', filter_type='date_to'),
+        {'type': 'datetime_to', 'field': GtfsStop.date},
+    ),
+    common.RouteParam(
+        'code', int, common.DocParam('code', filter_type='equals'),
+        {'type': 'equals', 'field': GtfsStop.code},
+    ),
+    common.RouteParam(
+        'city', str, common.DocParam('city', filter_type='equals'),
+        {'type': 'equals', 'field': GtfsStop.city},
+    ),
+]
+
+
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
 def list_(limit: int = common.param_limit(),
           offset: int = common.param_offset(),
