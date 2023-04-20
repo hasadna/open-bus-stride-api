@@ -78,15 +78,15 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
         session_query
         .join(model.SiriRide)
         .join(model.SiriStop)
-        .join(model.GtfsStop, model.SiriRideStop.gtfs_stop_id == model.GtfsStop.id)
-        .join(model.SiriVehicleLocation, model.SiriRideStop.nearest_siri_vehicle_location_id == model.SiriVehicleLocation.id)
-        .join(model.GtfsRide, model.SiriRide.gtfs_ride_id == model.GtfsRide.id)
-        .join(
+        .outerjoin(model.GtfsStop, model.SiriRideStop.gtfs_stop_id == model.GtfsStop.id)
+        .outerjoin(model.SiriVehicleLocation, model.SiriRideStop.nearest_siri_vehicle_location_id == model.SiriVehicleLocation.id)
+        .outerjoin(model.GtfsRide, model.SiriRide.gtfs_ride_id == model.GtfsRide.id)
+        .outerjoin(
             model.GtfsRideStop,
             sqlalchemy.sql.and_(model.GtfsRideStop.gtfs_stop_id == model.GtfsStop.id,
                                 model.GtfsRideStop.gtfs_ride_id == model.GtfsRide.id)
         )
-        .join(model.GtfsRoute, model.GtfsRide.gtfs_route_id == model.GtfsRoute.id)
+        .outerjoin(model.GtfsRoute, model.GtfsRide.gtfs_route_id == model.GtfsRoute.id)
     )
 
 
