@@ -36,7 +36,7 @@ TAG = 'aggregations'
 PYDANTIC_MODEL = GtfsRidesAggPydanticModel
 GROUP_BY_PYDANTIC_MODEL = GtfsRidesAggGroupByPydanticModel
 DEFAULT_LIMIT = 1000
-ALLOWED_GROUP_BY_FIELDS = ['gtfs_route_date', 'operator_ref', 'day_of_week']
+ALLOWED_GROUP_BY_FIELDS = ['gtfs_route_date', 'operator_ref', 'day_of_week', 'clustername']
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
@@ -89,7 +89,7 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
             count(1) as total_routes,
             sum(agg.num_planned_rides) as total_planned_rides,
             sum(agg.num_actual_rides) as total_actual_rides
-        from gtfs_rides_agg agg, gtfs_route rt
+        from gtfs_rides_agg agg, gtfs_route rt join clustertoline c on rt.line_ref = c.officelineid
         where
             agg.gtfs_route_id = rt.id
             and agg.gtfs_route_date >= :date_from
