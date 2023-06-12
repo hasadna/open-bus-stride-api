@@ -29,6 +29,8 @@ FILTER_DOCS = {
         'Note that all date/times must have a timezone specification.',
     "date_from": 'Filter by {what_singular}. Only return items which have a date after or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
     "date_to": 'Filter by {what_singular}. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
+    "hour_from": 'Filter by {what_singular}. Only return items which have an hour date after or equals to given value. Format: 0(12AM)-23',
+    "hour_to": 'Filter by {what_singular}. Only return items which have a date before or equals to given value. Format: 0(12AM)-23',
     "greater_or_equal": 'Filter by {what_singular}. Only return items which have a numeric value greater than or equal to given value',
     "lower_or_equal": 'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value',
 }
