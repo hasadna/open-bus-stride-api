@@ -124,5 +124,4 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
 
     sql += f" group by {', '.join(group_by_fields)}"
 
-    print(sql)
     return sql_route.list_(sql, sql_params, None, None, None, None, None, True)
