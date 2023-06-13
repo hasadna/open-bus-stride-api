@@ -75,11 +75,15 @@ def get_list(*args, convert_to_dict=None, **kwargs):
     try:
         q = get_list_query(session, *args, **kwargs)
         if kwargs.get('get_count'):
+            debug_print(f'Getting count for query {q}')
             q_count = q.count()
             session.close()
             return fastapi.Response(content=str(q_count), media_type="application/json")
         else:
-            q = q.yield_per(QUERY_PAGE_SIZE)
+            debug_print(f'Getting results for query: {q}')
+            if not hasattr(q, '__q_limit') or not q.__q_limit or q.__q_limit > QUERY_PAGE_SIZE:
+                debug_print(f'adding yield_per({QUERY_PAGE_SIZE}) to query')
+                q = q.yield_per(QUERY_PAGE_SIZE)
             q_iterator = (obj for obj in q)
             first_items = list(itertools.islice(q_iterator, QUERY_PAGE_SIZE + 1))
             if len(first_items) <= QUERY_PAGE_SIZE:
@@ -181,6 +185,7 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
         session_query = session_query.limit(q_limit)
     if q_offset is not None:
         session_query = session_query.offset(q_offset)
+    session_query.__q_limit = q_limit
     return session_query
 
 
