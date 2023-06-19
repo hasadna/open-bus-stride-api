@@ -37,7 +37,7 @@ TAG = 'aggregations'
 PYDANTIC_MODEL = GtfsRidesAggPydanticModel
 GROUP_BY_PYDANTIC_MODEL = GtfsRidesAggGroupByPydanticModel
 DEFAULT_LIMIT = 1000
-ALLOWED_GROUP_BY_FIELDS = ['gtfs_route_date', 'gtfs_route_hour', 'operator_ref', 'day_of_week']
+ALLOWED_GROUP_BY_FIELDS = ['gtfs_route_date', 'gtfs_route_hour', 'operator_ref', 'day_of_week', 'line_ref']
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
