@@ -81,9 +81,7 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
 
 
 @router.get("/group_by", tags=[TAG], response_model=typing.List[GROUP_BY_PYDANTIC_MODEL], description=f'{WHAT_SINGULAR} grouped by given fields.')
-def group_by_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
-              offset: int = common.param_offset(),
-              date_from: datetime.date = common.doc_param('date', filter_type='date_from', default=...),
+def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='date_from', default=...),
               date_to: datetime.date = common.doc_param('date', filter_type='date_to', default=...),
               exclude_hours_from: int = common.doc_param('hour', filter_type='hour_from', description="Hours to exclude from search, currently used to filter out edge cases."),
               exclude_hours_to: int = common.doc_param('hour', filter_type='hour_to', description="Hours to exclude from search, currently used to filter out edge cases."),
@@ -136,4 +134,4 @@ def group_by_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
 
     print(sql)
 
-    return sql_route.list_(sql, sql_params, None, limit, offset, None, None, True)
+    return sql_route.list_(sql, sql_params, None, None, None, None, None, True)
