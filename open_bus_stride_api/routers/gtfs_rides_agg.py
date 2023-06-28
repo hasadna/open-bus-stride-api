@@ -26,6 +26,9 @@ class GtfsRidesAggGroupByPydanticModel(pydantic.BaseModel):
     gtfs_route_hour: typing.Optional[datetime.date]
     operator_ref: typing.Optional[int]
     day_of_week: typing.Optional[str]
+    line_ref: typing.Optional[int]
+    route_short_name: typing.Optional[str]
+    route_long_name: typing.Optional[str]
     total_routes: int
     total_planned_rides: int
     total_actual_rides: int
@@ -58,9 +61,10 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
         from gtfs_rides_agg_by_hour agg, gtfs_route rt
         where
             agg.gtfs_route_id = rt.id
-            and date_trunc('day', agg.gtfs_route_hour) >= :date_from
-            and date_trunc('day', agg.gtfs_route_hour) <= :date_to   
+            and agg.gtfs_route_hour >= :date_from
+            and agg.gtfs_route_hour <= :date_to   
     """
+    date_to = datetime.datetime.combine(date_to, datetime.time(23, 59, 59))
     sql_params = {
         'date_from': date_from,
         'date_to': date_to,
@@ -77,7 +81,9 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
 
 
 @router.get("/group_by", tags=[TAG], response_model=typing.List[GROUP_BY_PYDANTIC_MODEL], description=f'{WHAT_SINGULAR} grouped by given fields.')
-def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='date_from', default=...),
+def group_by_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
+              offset: int = common.param_offset(),
+              date_from: datetime.date = common.doc_param('date', filter_type='date_from', default=...),
               date_to: datetime.date = common.doc_param('date', filter_type='date_to', default=...),
               exclude_hours_from: int = common.doc_param('hour', filter_type='hour_from', description="Hours to exclude from search, currently used to filter out edge cases."),
               exclude_hours_to: int = common.doc_param('hour', filter_type='hour_to', description="Hours to exclude from search, currently used to filter out edge cases."),
@@ -90,14 +96,17 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
     for fieldname in group_by:
         if fieldname == 'gtfs_route_hour':
             full_fieldname = 'agg.gtfs_route_hour'
-        elif fieldname == 'gtfs_route_date':
-            full_fieldname = "date_trunc('day', agg.gtfs_route_hour)"
         elif fieldname == 'day_of_week':
             full_fieldname = "trim(lower(to_char(agg.gtfs_route_hour, 'DAY')))"
+        elif fieldname == 'line_ref':
+            full_fieldname = f'rt.{fieldname}'
+            select_fields.append(f'json_agg(distinct rt.route_short_name)::text as route_short_name')
+            select_fields.append(f'json_agg(distinct rt.route_long_name)::text as route_long_name')
         else:
             full_fieldname = f'rt.{fieldname}'
         select_fields.append(f'{full_fieldname} as {fieldname}')
         group_by_fields.append(full_fieldname)
+
     sql = dedent(f"""
         select
             {', '.join(select_fields)},
@@ -107,9 +116,10 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
         from gtfs_rides_agg_by_hour agg, gtfs_route rt
         where
             agg.gtfs_route_id = rt.id
-            and date_trunc('day', agg.gtfs_route_hour) >= :date_from
-            and date_trunc('day', agg.gtfs_route_hour) <= :date_to
+            and agg.gtfs_route_hour >= :date_from
+            and agg.gtfs_route_hour <= :date_to
     """)
+    date_to = datetime.datetime.combine(date_to, datetime.time(23, 59, 59))
     sql_params = {
         'date_from': date_from,
         'date_to': date_to,
@@ -124,4 +134,6 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
 
     sql += f" group by {', '.join(group_by_fields)}"
 
-    return sql_route.list_(sql, sql_params, None, None, None, None, None, True)
+    print(sql)
+
+    return sql_route.list_(sql, sql_params, None, limit, offset, None, None, True)
