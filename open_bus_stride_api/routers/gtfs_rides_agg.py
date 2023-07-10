@@ -41,6 +41,7 @@ PYDANTIC_MODEL = GtfsRidesAggPydanticModel
 GROUP_BY_PYDANTIC_MODEL = GtfsRidesAggGroupByPydanticModel
 DEFAULT_LIMIT = 1000
 ALLOWED_GROUP_BY_FIELDS = ['gtfs_route_date', 'gtfs_route_hour', 'operator_ref', 'day_of_week', 'line_ref']
+AGG_VIEW_FIELDS = ['gtfs_route_date', 'gtfs_route_hour']
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
@@ -61,10 +62,9 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
         from gtfs_rides_agg_by_hour agg, gtfs_route rt
         where
             agg.gtfs_route_id = rt.id
-            and agg.gtfs_route_hour >= :date_from
-            and agg.gtfs_route_hour <= :date_to   
+            and agg.gtfs_route_date >= :date_from
+            and agg.gtfs_route_date <= :date_to   
     """
-    date_to = datetime.datetime.combine(date_to, datetime.time(23, 59, 59))
     sql_params = {
         'date_from': date_from,
         'date_to': date_to,
@@ -92,8 +92,8 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
     select_fields = []
     group_by_fields = []
     for fieldname in group_by:
-        if fieldname == 'gtfs_route_hour':
-            full_fieldname = 'agg.gtfs_route_hour'
+        if fieldname in AGG_VIEW_FIELDS:
+            full_fieldname = f'agg.{fieldname}'
         elif fieldname == 'day_of_week':
             full_fieldname = "trim(lower(to_char(agg.gtfs_route_hour, 'DAY')))"
         elif fieldname == 'line_ref':
@@ -114,10 +114,9 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
         from gtfs_rides_agg_by_hour agg, gtfs_route rt
         where
             agg.gtfs_route_id = rt.id
-            and agg.gtfs_route_hour >= :date_from
-            and agg.gtfs_route_hour <= :date_to
+            and agg.gtfs_route_date >= :date_from
+            and agg.gtfs_route_date <= :date_to
     """)
-    date_to = datetime.datetime.combine(date_to, datetime.time(23, 59, 59))
     sql_params = {
         'date_from': date_from,
         'date_to': date_to,
@@ -131,7 +130,4 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
         sql_params['exclude_hour_to'] = exclude_hours_to
 
     sql += f" group by {', '.join(group_by_fields)}"
-
-    print(sql)
-
     return sql_route.list_(sql, sql_params, None, None, None, None, None, True)
