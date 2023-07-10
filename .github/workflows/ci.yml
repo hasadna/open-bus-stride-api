@@ -1,6 +1,7 @@
 name: CI
 on:
   push:
+  pull_request_target:
 jobs:
   ci:
     runs-on: ubuntu-20.04
