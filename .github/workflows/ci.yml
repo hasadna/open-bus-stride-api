@@ -1,7 +1,8 @@
 name: CI
 on:
   push:
-  pull_request_target:
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
 jobs:
   ci:
     runs-on: ubuntu-20.04
