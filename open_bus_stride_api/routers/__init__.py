@@ -2,6 +2,7 @@
 ROUTER_NAMES = [
     'route_timetable',
     'stop_arrivals',
+    'daily_rides_execution',
     
     'siri_routes',
     'siri_rides',
