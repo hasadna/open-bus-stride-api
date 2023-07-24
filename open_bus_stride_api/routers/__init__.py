@@ -16,6 +16,5 @@ ROUTER_NAMES = [
     'gtfs_agencies',
     'gtfs_ride_stops',
 
-    # temporarily disabled due to locking issues
-    # 'gtfs_rides_agg',
+    'gtfs_rides_agg',
 ]
