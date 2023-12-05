@@ -1,6 +1,6 @@
 # Open Bus Stride API
 
-API For the Open Bus Stride project
+API For the [Open Bus Stride project](https://open-bus-map-search.hasadna.org.il/dashboard)
 
 * Please report issues and feature requests [here](https://github.com/hasadna/open-bus/issues/new)
 * To get updates about the system status and for general help join Hasadna's Slack #open-bus channel ([Hasadna Slack signup link](https://join.slack.com/t/hasadna/shared_invite/zt-167h764cg-J18ZcY1odoitq978IyMMig))
@@ -105,3 +105,7 @@ pytest -svvx
 ```
 
 Pytest has many options, see the help message for details.
+
+
+### Link To The Client Repo
+- [client repo](https://github.com/hasadna/open-bus-map-search)
