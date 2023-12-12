@@ -7,6 +7,14 @@ API For the [Open Bus Stride project](https://open-bus-map-search.hasadna.org.il
 
 See [our contributing docs](https://github.com/hasadna/open-bus-pipelines/blob/main/CONTRIBUTING.md) if you want to suggest changes to this repository.
 
+
+## Tech Stack
+
+- [python](https://www.python.org/)
+- [fastAPI framework](https://fastapi.tiangolo.com/)
+- [postgresql](https://www.postgresql.org/)
+
+
 ## Development using the Docker Compose environment
 
 This is the easiest option to start development, follow these instructions: https://github.com/hasadna/open-bus-pipelines/blob/main/README.md#stride-api
