@@ -23,9 +23,9 @@ FILTER_DOCS = {
     "prefix": 'Filter by {what_singular} prefix. Only return items which start with given string.',
     "equals": 'Filter by {what_singular}. Only return items which exactly match given string.',
     "contains": 'Filter by {what_singular}. Only return items which contain given string.',
-    "datetime_from": 'Filter by {what_singular}. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+    "datetime_from": 'Filter by {what_singular}. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T15:48:49+02:00". '
                      'Note that all date/times must have a timezone specification.',
-    "datetime_to": 'Filter by {what_singular}. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+    "datetime_to": 'Filter by {what_singular}. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T15:48:49+02:00". '
         'Note that all date/times must have a timezone specification.',
     "date_from": 'Filter by {what_singular}. Only return items which have a date after or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
     "date_to": 'Filter by {what_singular}. Only return items which have a date before or equals to given value. Format: "YYYY-MM-DD", e.g. "2021-11-03".',
@@ -370,12 +370,12 @@ def param_filter_contains(what_singular):
 
 
 def param_filter_datetime_from(what_singular):
-    return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+    return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have date/time after or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T15:48:49+02:00". '
                                            f'Note that all date/times must have a timezone specification.')
 
 
 def param_filter_datetime_to(what_singular):
-    return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T55:48:49+02:00". '
+    return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have date/time before or equals to given value. Format: "YYYY-MM-DDTHH:MM:SS+Z", e.g. "2021-11-03T15:48:49+02:00". '
                                            f'Note that all date/times must have a timezone specification.')
 
 
