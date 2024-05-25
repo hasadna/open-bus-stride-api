@@ -63,8 +63,8 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
     return (
         session_query
         .join(model.SiriRoute, model.SiriRide.siri_route_id == model.SiriRoute.id)
-        .join(model.GtfsRide, model.SiriRide.gtfs_ride_id == model.GtfsRide.id)
-        .join(model.GtfsRoute, model.GtfsRide.gtfs_route_id == model.GtfsRoute.id)
+        .outerjoin(model.GtfsRide, model.SiriRide.gtfs_ride_id == model.GtfsRide.id)
+        .outerjoin(model.GtfsRoute, model.GtfsRide.gtfs_route_id == model.GtfsRoute.id)
     )
 
 
