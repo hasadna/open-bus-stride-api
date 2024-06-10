@@ -4,6 +4,7 @@ import pydantic
 from fastapi import APIRouter
 
 from open_bus_stride_db import model
+from pydantic.fields import Undefined
 
 from . import common, gtfs_rides, gtfs_stops, gtfs_routes
 
@@ -64,6 +65,16 @@ def _post_session_query_hook(session_query):
 
 
 gtfs_ride_stop_filter_params = [
+    common.RouteParam(
+        'arrival_time_from', datetime.datetime,
+        common.DocParam('arrival time from', filter_type='datetime_from', default=Undefined),
+        {'type': 'datetime_from', 'field': model.GtfsRideStop.arrival_time},
+    ),
+    common.RouteParam(
+        'arrival_time_to', datetime.datetime,
+        common.DocParam('arrival time to', filter_type='datetime_to', default=Undefined),
+        {'type': 'datetime_to', 'field': model.GtfsRideStop.arrival_time},
+    ),
     common.RouteParam(
         'gtfs_stop_ids', str, common.DocParam('gtfs stop id', filter_type='list'),
         {'type': 'in', 'field': model.GtfsRideStop.gtfs_stop_id},

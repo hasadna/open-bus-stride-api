@@ -10,6 +10,7 @@ def test_gtfs_agencies(client):
 def test_gtfs_ride_stops(client):
     common.assert_router_list_get(
         client, '/gtfs_ride_stops',
+        params={'arrival_time_from': '2023-05-22T02:12:50+00:00', 'arrival_time_to': '2023-05-22T02:18:59+00:00'},
         get_get_count_params=lambda items: {'gtfs_ride_ids': str(items[0]['gtfs_ride_id'])}
     )
 
