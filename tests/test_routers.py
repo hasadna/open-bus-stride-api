@@ -15,6 +15,15 @@ def test_gtfs_ride_stops(client):
     )
 
 
+def test_gtfs_ride_stops_list_bad_arrival_time_range(client):
+    res = client.get(
+        '/gtfs_ride_stops/list',
+        params={'arrival_time_from': '2023-01-01T00:00:00+00:00', 'arrival_time_to': '2023-03-01T00:00:00+00:00'},
+    )
+    assert res.status_code == 400, f'expected 400, got {res.status_code}'
+    assert res.json() == {'detail': 'Time range is longer than 30 days'}
+
+
 def test_gtfs_rides(client):
     common.assert_router_list_get(
         client, '/gtfs_rides',

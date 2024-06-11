@@ -1,7 +1,7 @@
 import datetime
 
 import pydantic
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from open_bus_stride_db import model
 from pydantic.fields import Undefined
@@ -114,6 +114,10 @@ gtfs_ride_stop_list_params = [
 
 @common.add_api_router_list(router, TAG, GtfsRideStopWithRelatedPydanticModel, WHAT_PLURAL, gtfs_ride_stop_list_params)
 def list_(**kwargs):
+    # Validate arrival_time range is no longer than 30 days (to avoid heavy queries)
+    if (kwargs['arrival_time_to'] - kwargs['arrival_time_from']).days > 30:
+        raise HTTPException(status_code=400, detail="Time range is longer than 30 days")
+
     return common.get_list(
         SQL_MODEL, kwargs['limit'], kwargs['offset'],
         [
