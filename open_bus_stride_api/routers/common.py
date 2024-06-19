@@ -442,13 +442,16 @@ def get_route_params_with_prefix(name_prefix, doc_param_prefix, route_params):
     ]
 
 
-def add_api_router_list(router, tag, pydantic_model, what_plural, route_params):
+def add_api_router_list(router, tag, pydantic_model, what_plural, route_params, description=None):
 
     def _decorator(func):
         func.__signature__ = inspect.signature(func).replace(parameters=[
             route_param.get_signature_parameter() for route_param in route_params
         ])
-        router.add_api_route("/list", func, tags=[tag], response_model=typing.List[pydantic_model], description=f'List of {what_plural}.')
+        router.add_api_route(
+            "/list", func, tags=[tag], response_model=typing.List[pydantic_model],
+            description=description if description else f'List of {what_plural}.'
+        )
         return func
 
     return _decorator

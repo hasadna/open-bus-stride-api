@@ -1,10 +1,10 @@
 import datetime
+from textwrap import dedent
 
 import pydantic
 from fastapi import APIRouter, HTTPException
 
 from open_bus_stride_db import model
-from pydantic.fields import Undefined
 
 from . import common, gtfs_rides, gtfs_stops, gtfs_routes
 
@@ -67,12 +67,12 @@ def _post_session_query_hook(session_query):
 gtfs_ride_stop_filter_params = [
     common.RouteParam(
         'arrival_time_from', datetime.datetime,
-        common.DocParam('arrival time from', filter_type='datetime_from', default=Undefined),
+        common.DocParam('arrival time from', filter_type='datetime_from'),
         {'type': 'datetime_from', 'field': model.GtfsRideStop.arrival_time},
     ),
     common.RouteParam(
         'arrival_time_to', datetime.datetime,
-        common.DocParam('arrival time to', filter_type='datetime_to', default=Undefined),
+        common.DocParam('arrival time to', filter_type='datetime_to'),
         {'type': 'datetime_to', 'field': model.GtfsRideStop.arrival_time},
     ),
     common.RouteParam(
@@ -112,11 +112,26 @@ gtfs_ride_stop_list_params = [
 ]
 
 
-@common.add_api_router_list(router, TAG, GtfsRideStopWithRelatedPydanticModel, WHAT_PLURAL, gtfs_ride_stop_list_params)
+@common.add_api_router_list(
+    router, TAG, GtfsRideStopWithRelatedPydanticModel, WHAT_PLURAL, gtfs_ride_stop_list_params,
+    description=dedent("""
+    List of gtfs ride stops.
+    
+    Due to large number of items in the table, you must filter the results by at least one of the following:
+    
+    1. gtfs_ride_ids - containing a single gtfs ride id.
+    2. arrival_time_from and arrival_time_to - containing a time range.
+    
+    Additional filters can be applied in addition to one of the above options to narrow down the results.
+    """).strip()
+)
 def list_(**kwargs):
-    # Validate arrival_time range is no longer than 30 days (to avoid heavy queries)
-    if (kwargs['arrival_time_to'] - kwargs['arrival_time_from']).days > 30:
-        raise HTTPException(status_code=400, detail="Time range is longer than 30 days")
+    if not kwargs.get('gtfs_ride_ids') or ',' in kwargs['gtfs_ride_ids']:
+        # Validate arrival_time range is no longer than 30 days (to avoid heavy queries)
+        if not kwargs.get('arrival_time_from') or not kwargs.get('arrival_time_to'):
+            raise HTTPException(status_code=400, detail="arrival_time_from and arrival_time_to are required")
+        if (kwargs['arrival_time_to'] - kwargs['arrival_time_from']).days > 30:
+            raise HTTPException(status_code=400, detail="Time range is longer than 30 days")
 
     return common.get_list(
         SQL_MODEL, kwargs['limit'], kwargs['offset'],
