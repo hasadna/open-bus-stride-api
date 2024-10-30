@@ -18,7 +18,6 @@ jobs:
         git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db &&\
         pip install -r requirements-dev.txt &&\
         pip install -r tests/requirements.txt &&\
-        pytest &&\
         echo "${GITHUB_TOKEN}" | docker login ghcr.io -u hasadna --password-stdin &&\
         if docker pull "${DOCKER_APP_IMAGE_NAME}:latest"; then
           CACHE_FROM_ARG="--cache-from ${DOCKER_APP_IMAGE_NAME}:latest"
@@ -28,6 +27,7 @@ jobs:
         docker build $CACHE_FROM_ARG --build-arg VERSION=${GITHUB_SHA} -t app . &&\
         docker tag app "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}" &&\
         docker push "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}" &&\
+        pytest &&\
         if [ "${GITHUB_REF}" == "refs/heads/main" ]; then
           docker tag app "${DOCKER_APP_IMAGE_NAME}:latest" &&\
           docker push "${DOCKER_APP_IMAGE_NAME}:latest" &&\
