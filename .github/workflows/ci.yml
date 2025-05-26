@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
     - env:
         DOCKER_APP_IMAGE_NAME: "ghcr.io/hasadna/open-bus-stride-api/open-bus-stride-api"
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
