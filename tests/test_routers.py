@@ -68,7 +68,7 @@ def test_route_timetable(client):
 def test_siri_ride_stops(client):
     common.assert_router_list_get(
         client, '/siri_ride_stops',
-        params={'siri_ride_ids': '11286800'},
+        params={'siri_ride_ids': '107208369'},
         get_get_count_params=lambda items: {'siri_ride_ids': str(items[0]['siri_ride_id']),
                                             'siri_stop_ids': str(items[0]['siri_stop_id'])}
     )
