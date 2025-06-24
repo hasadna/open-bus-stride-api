@@ -1,5 +1,7 @@
 import datetime
 
+import pytest
+
 
 def get_query_params():
     date = datetime.date(2022, 6, 21)
@@ -22,6 +24,7 @@ def get_query_params():
     }
 
 
+@pytest.mark.skip(reason="This test relies on specific GTFS data that is not always available")
 def test_urbanaccess_fake_gtfs_data_query(stride_client):
     """Tests a query which is used by stride client urbanaccess"""
     start_time = datetime.datetime.now()
