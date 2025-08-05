@@ -3,32 +3,25 @@ on:
   push:
   pull_request:
     types: [synchronize, opened, reopened, ready_for_review]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-
-      - name: Clone open-bus-stride-db
-        run: git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db
-
-      - name: Install dependencies
+          python-version: "3.8"
+      - name: Clone DB and Install Dependencies
         run: |
+          git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db
           pip install -r requirements-dev.txt
           pip install -r tests/requirements.txt
-
-      - name: Log in to GitHub Container Registry
+      - name: Docker Login
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "${GITHUB_TOKEN}" | docker login ghcr.io -u hasadna --password-stdin
-
-      - name: Build Docker image
+      - name: Build Docker Image
         env:
           DOCKER_APP_IMAGE_NAME: "ghcr.io/hasadna/open-bus-stride-api/open-bus-stride-api"
         run: |
@@ -38,176 +31,74 @@ jobs:
             CACHE_FROM_ARG=""
           fi
           docker build $CACHE_FROM_ARG --build-arg VERSION=${GITHUB_SHA} -t app .
-
-      - name: Tag and push Docker image
-        env:
-          DOCKER_APP_IMAGE_NAME: "ghcr.io/hasadna/open-bus-stride-api/open-bus-stride-api"
-        run: |
           docker tag app "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}"
-          docker push "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}"
 
   test:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-
-      - name: Clone open-bus-stride-db
-        run: git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db
-
-      - name: Install dependencies
+          python-version: "3.8"
+      - name: Clone DB and Install Dependencies
         run: |
+          git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db
           pip install -r requirements-dev.txt
           pip install -r tests/requirements.txt
-
-      - name: Start database
-        env:
-          SQLALCHEMY_URL: ${{ secrets.SQLALCHEMY_URL }}
-        run: |
-          cd ../open-bus-stride-db
-          docker-compose up -d stride-db
-          . .env && alembic upgrade head
-
-      - name: Run tests
-        env:
-          SQLALCHEMY_URL: ${{ secrets.SQLALCHEMY_URL }}
+      - name: Run Tests
         run: pytest
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [build, test]
-    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '--no-deploy')
+    needs: test
+    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-
-      - name: Clone open-bus-stride-db
-        run: git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db
-
-      - name: Log in to GitHub Container Registry
+          python-version: "3.8"
+      - name: Clone DB and Install Dependencies
+        run: |
+          git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db
+          pip install -r requirements-dev.txt
+          pip install -r tests/requirements.txt
+      - name: Docker Login
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "${GITHUB_TOKEN}" | docker login ghcr.io -u hasadna --password-stdin
-
-      - name: Tag and push latest Docker image
+      - name: Push Docker Images
         env:
           DOCKER_APP_IMAGE_NAME: "ghcr.io/hasadna/open-bus-stride-api/open-bus-stride-api"
         run: |
-          docker pull "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}"
-          docker tag "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}" "${DOCKER_APP_IMAGE_NAME}:latest"
+          docker push "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}"
+          docker tag app "${DOCKER_APP_IMAGE_NAME}:latest"
           docker push "${DOCKER_APP_IMAGE_NAME}:latest"
-
-      - name: Deploy to Kubernetes
+      - name: Deploy to K8s & Update ETL
         env:
           HASADNA_K8S_DEPLOY_KEY: ${{ secrets.HASADNA_K8S_DEPLOY_KEY }}
+          STRIDE_ETL_DEPLOY_KEY: ${{ secrets.STRIDE_ETL_DEPLOY_KEY }}
           DOCKER_APP_IMAGE_NAME: "ghcr.io/hasadna/open-bus-stride-api/open-bus-stride-api"
         run: |
-          cd `mktemp -d`
-          echo "${HASADNA_K8S_DEPLOY_KEY}" > hasadna_k8s_deploy_key
-          chmod 400 hasadna_k8s_deploy_key
-          export GIT_SSH_COMMAND="ssh -i `pwd`/hasadna_k8s_deploy_key -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-          git clone git@github.com:hasadna/hasadna-k8s.git
-          cd hasadna-k8s
-          python update_yaml.py '{"strideApiImage":"'"${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}"'"}' apps/openbus/values-hasadna-auto-updated.yaml
-          git config --global user.name "Open Bus Stride API CI"
-          git config --global user.email "open-bus-stride-api-ci@localhost"
-          git add apps/openbus/values-hasadna-auto-updated.yaml
-          git commit -m "automatic update of open bus stride api"
-          git push origin master
-
-      - name: Update stride-etl dependency
-        env:
-          STRIDE_ETL_DEPLOY_KEY: ${{ secrets.STRIDE_ETL_DEPLOY_KEY }}
-        run: |
-          cd `mktemp -d`
-          echo "${STRIDE_ETL_DEPLOY_KEY}" > stride_etl_deploy_key
-          chmod 400 stride_etl_deploy_key
-          export GIT_SSH_COMMAND="ssh -i `pwd`/stride_etl_deploy_key -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-          git clone git@github.com:hasadna/open-bus-stride-etl.git
-          cd open-bus-stride-etl
-          echo "${GITHUB_SHA}" > stride-api-latest-commit.txt
-          git add stride-api-latest-commit.txt
-          git commit -m "automatic update of open bus stride api dependencies"
-          git push origin main
-
-  publish:
-    runs-on: ubuntu-latest
-    needs: [build, test]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "latest"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Clone open-bus-stride-db
-        run: git clone https://github.com/hasadna/open-bus-stride-db.git ../open-bus-stride-db
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements-dev.txt
-          pip install -r tests/requirements.txt
-          pip install fastapi uvicorn openapi-generator-cli
-
-      - name: Start database and API server
-        env:
-          SQLALCHEMY_URL: ${{ secrets.SQLALCHEMY_URL }}
-        run: |
-          cd ../open-bus-stride-db
-          docker-compose up -d stride-db
-          . .env && alembic upgrade head
-          cd ../../${GITHUB_WORKSPACE}
-          uvicorn main:app --host 0.0.0.0 --port 8000 &
-          sleep 10 # Wait for server to start
-
-      - name: Generate TypeScript client
-        run: |
-          mkdir -p npm-package
-          openapi-generator-cli generate \
-            -i http://localhost:8000/openapi.json \
-            -g typescript-axios \
-            -o npm-package \
-            --additional-properties=supportsES6=true,npmName=@hasadna/open-bus-stride-api-client
-          cd npm-package
-          npm install typescript --save-dev
-          npm install axios
-          npx tsc --init
-          npm install
-
-      - name: Set package version
-        run: |
-          cd npm-package
-          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
-          VERSION="1.0.0-$SHORT_SHA"
-          npm version $VERSION --no-git-tag-version
-
-      - name: Check if version exists and publish
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd npm-package
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-          if npm view @hasadna/open-bus-stride-api-client@$VERSION > /dev/null 2>&1; then
-            echo "Version $VERSION already exists, skipping publish"
-          else
-            npm publish --access public
+          if ! git log -1 --pretty=format:"%s" | grep -- --no-deploy; then
+            cd `mktemp -d`
+            echo "${HASADNA_K8S_DEPLOY_KEY}" > hasadna_k8s_deploy_key
+            chmod 400 hasadna_k8s_deploy_key
+            export GIT_SSH_COMMAND="ssh -i `pwd`/hasadna_k8s_deploy_key -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+            git clone git@github.com:hasadna/hasadna-k8s.git
+            cd hasadna-k8s
+            python update_yaml.py '{"strideApiImage":"'"${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}"'"}' apps/openbus/values-hasadna-auto-updated.yaml
+            git config --global user.name "Open Bus Stride API CI"
+            git config --global user.email "open-bus-stride-api-ci@localhost"
+            git add apps/openbus/values-hasadna-auto-updated.yaml && git commit -m "automatic update of open bus stride api"
+            git push origin master
+            echo "${STRIDE_ETL_DEPLOY_KEY}" > stride_etl_deploy_key
+            chmod 400 stride_etl_deploy_key
+            export GIT_SSH_COMMAND="ssh -i `pwd`/stride_etl_deploy_key -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+            git clone git@github.com:hasadna/open-bus-stride-etl.git
+            cd open-bus-stride-etl
+            echo "${GITHUB_SHA}" > stride-api-latest-commit.txt
+            git add stride-api-latest-commit.txt
+            git commit -m "automatic update of open bus stride api dependencies"
+            git push origin main
           fi
