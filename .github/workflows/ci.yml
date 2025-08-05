@@ -52,7 +52,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '--no-deploy') }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v5
@@ -102,3 +102,11 @@ jobs:
             git commit -m "automatic update of open bus stride api dependencies"
             git push origin main
           fi
+
+      - name: Trigger client generation
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: hasadna/open-bus-api-client
+          event-type: generate-client
+          client-payload: '{"version": "${GITHUB_SHA}"}'
