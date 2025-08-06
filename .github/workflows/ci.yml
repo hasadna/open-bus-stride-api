@@ -103,10 +103,32 @@ jobs:
             git push origin main
           fi
 
+      - name: Extract semver-fragment from commit message
+        id: extract
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          FRAGMENT=""
+           if echo "$COMMIT_MSG" | grep -qi -- '--generate-skip'; then
+            FRAGMENT="skip"
+          elif echo "$COMMIT_MSG" | grep -qi -- '--generate-none'; then
+            FRAGMENT="none"
+          elif echo "$COMMIT_MSG" | grep -qi -- '--generate-patch'; then
+            FRAGMENT="patch"
+          elif echo "$COMMIT_MSG" | grep -qi -- '--generate-minor'; then
+            FRAGMENT="minor"
+          elif echo "$COMMIT_MSG" | grep -qi -- '--generate-major'; then
+            FRAGMENT="major"
+          fi
+          echo "semver-fragment=$FRAGMENT" >> "$GITHUB_OUTPUT"
+
       - name: Trigger client generation
+        if: ${{ steps.extract.outputs.semver-fragment != '' }}
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: hasadna/open-bus-api-client
           event-type: generate-client
-          client-payload: '{"version": "${GITHUB_SHA}"}'
+          client-payload: >-
+            {
+              "semver-fragment": "${{ steps.extract.outputs.semver-fragment }}"
+            }
