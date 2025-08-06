@@ -1,119 +1,134 @@
-# Open Bus Stride API
+# 🚌 Open Bus Stride API
 
-API For the [Open Bus Stride project](https://open-bus-map-search.hasadna.org.il/dashboard)
+**An API for the [Open Bus Stride Project](https://open-bus-map-search.hasadna.org.il/dashboard)**
 
-* Please report issues and feature requests [here](https://github.com/hasadna/open-bus/issues/new)
-* To get updates about the system status and for general help join Hasadna's Slack #open-bus channel ([Hasadna Slack signup link](https://join.slack.com/t/hasadna/shared_invite/zt-167h764cg-J18ZcY1odoitq978IyMMig))
+## 📢 Get Involved
 
-See [our contributing docs](https://github.com/hasadna/open-bus-pipelines/blob/main/CONTRIBUTING.md) if you want to suggest changes to this repository.
+- 💬 For general help and system updates, join the Hasadna Slack: [#open-bus channel](https://join.slack.com/t/hasadna/shared_invite/zt-167h764cg-J18ZcY1odoitq978IyMMig)
+- 🐞 Found a bug or have a feature request? [Open an issue](https://github.com/hasadna/open-bus-map-search/issues/new)
+- 🤝 Want to contribute? See our [contributing guidelines](https://github.com/hasadna/open-bus-pipelines/blob/main/CONTRIBUTING.md)
 
+## 🔗 Related Projects
 
-## Tech Stack
+### Frontend
 
-- [python](https://www.python.org/)
-- [fastAPI framework](https://fastapi.tiangolo.com/)
-- [postgresql](https://www.postgresql.org/)
+- [🗺️ Open Bus Map Search (Client App)](https://github.com/hasadna/open-bus-map-search) - [Live Website](https://open-bus-map-search.hasadna.org.il/dashboard)
+- [📦 Open Bus API Client (API Package Generator)](https://github.com/hasadna/open-bus-api-client) - [NPM Package](https://www.npmjs.com/package/@hasadna/open-bus-api-client)
 
+### Backend
 
-## Development using the Docker Compose environment
+- [🏗️ Open Bus Pipelines](https://github.com/hasadna/open-bus-pipelines)
+- [🌐 Open Bus Stride API (REST)](https://github.com/hasadna/open-bus-stride-api) – [API Docs](https://open-bus-stride-api.hasadna.org.il/docs)
+- [🧾 Open Bus Stride DB](https://github.com/hasadna/open-bus-stride-db)
+- [🔧 Open Bus Stride ETL](https://github.com/hasadna/stride-etl)
+- [📚 Open Bus GTFS ETL](https://github.com/hasadna/gtfs-etl)
+- [📡 Open Bus SIRI Requester](https://github.com/hasadna/siri-requester)
+- [🧪 Open Bus SIRI ETL](https://github.com/hasadna/siri-etl)
 
-This is the easiest option to start development, follow these instructions: https://github.com/hasadna/open-bus-pipelines/blob/main/README.md#stride-api
+## 🛠️ Tech Stack
 
-For local development, see the additional functionality section: `Develop stride-api from a local clone`
+- [Python](https://www.python.org/)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [PostgreSQL](https://www.postgresql.org/)
 
-## Local Development
+## 🚀 Getting Started
 
-It's much easier to use the Docker Compose environment, but the following can be
-refferd to for more details regarding the internal processes and for development
-using your local Python interpreter. 
+### Option 1: Using Docker Compose (Recommended)
 
-### Install
+The easiest way to get up and running is with Docker Compose.  
+Follow the instructions [here](https://github.com/hasadna/open-bus-pipelines/blob/main/README.md#stride-api).
 
-Create a virtualenv (using Python 3.8)
+For local development (e.g. making changes to the code), also see:  
+**`Develop stride-api from a local clone`** in the same document.
 
-```
+### Option 2: Local Development (Manual Setup)
+
+Use this if you prefer to run directly from your local Python environment.
+
+#### 1. Clone and Setup
+
+Ensure you have **Python 3.8** installed.
+
+```bash
 python3.8 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements-dev.txt
 ```
 
-Update pip
+Ensure a local clone of [open-bus-stride-db](https://github.com/hasadna/open-bus-stride-db) exists at:
 
 ```
-venv/bin/pip install --upgrade pip
+../open-bus-stride-db
 ```
 
-You should have a copy of open-bus-stride-db repository at ../open-bus-stride-db
+#### 2. Database Connection
 
-Install dependencies
+You’ll need a database. You have two options:
 
-```
-venv/bin/pip install -r requirements-dev.txt 
-```
+- **Option A**: Start `stride-db` using the Docker Compose environment from [open-bus-pipelines](https://github.com/hasadna/open-bus-pipelines).
+- **Option B**: Connect to the production DB using Redash read-only credentials.
 
-### Use
+Create a `.env` file:
 
-You need a DB to connect to, there are 2 options here:
-
-* Start the stride-db from open-bus-pipelines docker-compose environment
-* Connect to the production DB using the Redash read-only credentials
-  * Create a `.env` file with the following, replacing the url to the production redash read-only url: `export SQLALCHEMY_URL=postgresql://postgres:123456@localhost`
-  * Source the .env: `. .env`
-
-Activate virtualenv
-
-```
-. venv/bin/activate
+```env
+export SQLALCHEMY_URL=postgresql://postgres:123456@localhost
 ```
 
-Start the FastAPI server with automatic reload on changes
+Then source it:
 
+```bash
+. .env
 ```
+
+#### 3. Run the API Server
+
+```bash
 uvicorn open_bus_stride_api.main:app --reload
 ```
 
-See the API docs at http://localhost:8000/docs
+Access the interactive API docs at:
+👉 [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### Manage APIs
+## 🧩 API Development
 
-All existing APIs from the docs are defined under ```open_bus_stride_api/routers/<base_router_name>.py```
-
-Follow this example to create or edit a simple API for a specific table with filters: 
-
+All routes are defined in:
 
 ```
-@router.<http_method>("/<api_path>", tags=[<file_name>], response_model=<pydantic_response_model>) // 
-def name(<filtering_params>, limit, offset): # always include limit & offest to allow easy iteration on the data
+open_bus_stride_api/routers/<base_router_name>.py
+```
+
+### ✍️ Example API
+
+```python
+@router.<http_method>("/<api_path>", tags=["<tag_name>"], response_model=<ResponseModel>)
+def name(<filtering_params>, limit, offset):
     return common.get_list(
-        <db_model>, limit, offset,
-        [   
-            {'type': <filter_type>, 'field': <db_stcruct>.<specific_id>, 'value': <filter_param>},
+        <DBModel>, limit, offset,
+        [
+            {'type': <filter_type>, 'field': <DBModel>.<field>, 'value': <filter_param>},
         ]
     )
 ```
 
-Filter types are defined at ```open_bus_stride_api/routers/common.py -> get_list_query_filter_<filter_type>``` (e.g.: 'equal', 'date_in_range')
+- **Filters**: Defined in `routers/common.py` → `get_list_query_filter_<filter_type>`  (Examples: `'equal'`, `'date_in_range'`)
 
-### Running Tests
+Always include `limit` and `offset` for pagination.
 
-Install for local development as described above.
+## 🧪 Running Tests
 
-Install test requirements:
+Set up your environment as described in the **Local Development** section above.
 
-```
+Install test dependencies:
+
+```bash
 pip install -r tests/requirements.txt
 ```
 
-To run the tests you need to connect to a DB with full stride data, 
-easiest way is to connect to the production DB as described above by
-setting the SQLALCHEMY_URL env var accordingly.
+Ensure the DB contains full Stride data (production read-only access works).
 
-Run all tests with full output, exiting on first error:
+Run tests:
 
-```
+```bash
 pytest -svvx
 ```
-
-Pytest has many options, see the help message for details.
-
-
-### Link To The Client Repo
-- [client repo](https://github.com/hasadna/open-bus-map-search)
