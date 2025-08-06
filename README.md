@@ -118,7 +118,7 @@ Pytest has many options, see the help message for details.
 ### Link To The Client Repo
 - [client repo](https://github.com/hasadna/open-bus-map-search)
 
-## 🔄 Versioning & Client Generation
+## 🔄 Generation & Publish Client Api Package
 
 When changes are merged into the `main` branch, the commit message is scanned for versioning instructions.
 This controls automatic generation of a client API package in the [open-bus-api-client](https://github.com/hasadna/open-bus-api-client) repository.
@@ -127,8 +127,8 @@ Include one of the following flags in your commit message:
 
 | Commit Flag         | Behavior                                      |
 |---------------------|-----------------------------------------------|
-| `--generate-skip`   | Runs the generate workflow, but skips publish |
-| `--generate-none`   | Generates client with no version bump         |
+| `--generate-none`   | Runs the generate workflow, but skips publish |
+| `--generate-skip`   | Generates client, but skip version bump       |
 | `--generate-patch`  | Generates client and bumps patch version      |
 | `--generate-minor`  | Generates client and bumps minor version      |
 | `--generate-major`  | Generates client and bumps major version      |
