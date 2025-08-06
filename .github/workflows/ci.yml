@@ -5,10 +5,10 @@ on:
     types: [synchronize, opened, reopened, ready_for_review]
 jobs:
   ci:
-    name: CI Open Bus Stride API 
-    id: ci
     runs-on: ubuntu-latest
     steps:
+    - name: CI Open Bus Stride API 
+    - id: ci
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v5
       with:
@@ -83,5 +83,5 @@ jobs:
         event-type: generate-client
         client-payload: |
           {
-            "semver-fragment": "${{ steps.compute-fragment.outputs.fragment }}"
+            "semver-fragment": "${{ steps.ci.outputs.fragment }}"
           }
