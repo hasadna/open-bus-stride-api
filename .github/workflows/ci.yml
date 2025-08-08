@@ -7,13 +7,12 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-    - name: CI Open Bus Stride API 
-    - id: ci
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v5
       with:
         python-version: '3.8'
-    - env:
+    - id: ci
+      env:
         DOCKER_APP_IMAGE_NAME: "ghcr.io/hasadna/open-bus-stride-api/open-bus-stride-api"
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         HASADNA_K8S_DEPLOY_KEY: ${{ secrets.HASADNA_K8S_DEPLOY_KEY }}
@@ -59,11 +58,7 @@ jobs:
             git push origin main
             COMMIT_MSG="${{ github.event.head_commit.message }}"
             FRAGMENT=""
-            if echo "$COMMIT_MSG" | grep -qi -- '--generate-skip'; then
-              FRAGMENT="skip"
-            elif echo "$COMMIT_MSG" | grep -qi -- '--generate-none'; then
-              FRAGMENT="none"
-            elif echo "$COMMIT_MSG" | grep -qi -- '--generate-patch'; then
+            if echo "$COMMIT_MSG" | grep -qi -- '--generate-patch'; then
               FRAGMENT="patch"
             elif echo "$COMMIT_MSG" | grep -qi -- '--generate-minor'; then
               FRAGMENT="minor"

@@ -125,13 +125,11 @@ This controls automatic generation of a client API package in the [open-bus-api-
 
 Include one of the following flags in your commit message:
 
-| Commit Flag         | Behavior                                      |
-|---------------------|-----------------------------------------------|
-| `--generate-none`   | Runs the generate workflow, but skips publish |
-| `--generate-skip`   | Generates client, but skip version bump       |
-| `--generate-patch`  | Generates client and bumps patch version      |
-| `--generate-minor`  | Generates client and bumps minor version      |
-| `--generate-major`  | Generates client and bumps major version      |
+| Commit Flag        | Behavior                                 |
+| ------------------ | ---------------------------------------- |
+| `--generate-patch` | Generates client and bumps patch version |
+| `--generate-minor` | Generates client and bumps minor version |
+| `--generate-major` | Generates client and bumps major version |
 
 **Example commit:**
 
