@@ -47,7 +47,7 @@ QUERY = """
 VELOCITY_MIN = 0
 VELOCITY_MAX = 200
 
-class SiriTimeAggregationPydanticModel(pydantic.BaseModel):
+class SiriVelocityAggregationPydanticModel(pydantic.BaseModel):
     rounded_lon: float
     rounded_lat: float
     total_sample_count: int
@@ -56,15 +56,15 @@ class SiriTimeAggregationPydanticModel(pydantic.BaseModel):
 
 router = APIRouter()
 
-@router.get("/siri_time_aggregation", tags=[TAG], response_model=List[SiriTimeAggregationPydanticModel])
-def siri_time_aggregation(
+@router.get("/siri_velocity_aggregation", tags=[TAG], response_model=List[SiriVelocityAggregationPydanticModel])
+def siri_velocity_aggregation(
     recorded_from: datetime.datetime = Query(..., description="start of recorded_at_time range, inclusive"),
     lon_min: float = Query(34.25, description="minimum longitude bound"),
     lon_max: float = Query(35.70, description="maximum longitude bound"),
     lat_min: float = Query(29.50, description="minimum latitude bound"),
     lat_max: float = Query(33.33, description="maximum latitude bound"),
     rounding_precision: int = Query(2, ge=0, le=6, description="number of decimals to round lon/lat"),
-) -> List[SiriTimeAggregationPydanticModel]:
+) -> List[SiriVelocityAggregationPydanticModel]:
     sql = text(QUERY)
 
     params = {
@@ -82,7 +82,7 @@ def siri_time_aggregation(
     try:
         with common.get_session() as session:
             result = session.execute(sql, params)
-            rows: List[SiriTimeAggregationPydanticModel] = [
+            rows: List[SiriVelocityAggregationPydanticModel] = [
                 {
                     "rounded_lon": float(r["rounded_lon"]),
                     "rounded_lat": float(r["rounded_lat"]),
