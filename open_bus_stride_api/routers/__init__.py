@@ -10,6 +10,7 @@ ROUTER_NAMES = [
     'siri_ride_stops',
     'siri_vehicle_locations',
     'siri_snapshots',
+    'siri_velocity_aggregation',
 
     'gtfs_routes',
     'gtfs_stops',
