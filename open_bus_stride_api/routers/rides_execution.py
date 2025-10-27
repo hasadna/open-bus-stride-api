@@ -44,7 +44,7 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
             where
                 sr.operator_ref = :operator_ref
                 and sr.line_ref = :line_ref
-                and siri_ride.scheduled_start_time::date between :date_from and :date_to
+                and date_trunc('day', siri_ride.scheduled_start_time) between :date_from and :date_to
             ) actual_rides
         full outer join
             (select 
@@ -55,7 +55,7 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
             where
                 gr.operator_ref = :operator_ref
                 and gr.line_ref = :line_ref
-                and gtfs_ride.start_time::date between :date_from and :date_to
+                and date_trunc('day', gtfs_ride.start_time) between :date_from and :date_to
             ) planned_rides
         on
             actual_rides.start_time = planned_rides.start_time
