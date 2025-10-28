@@ -30,16 +30,36 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
           operator_ref: int = common.doc_param('operator_ref', filter_type='equals', description="Line operator ref."),
           line_ref: int = common.doc_param('line_ref', filter_type='equals', description="Line ref.")):
     sql = """
-        select actual_rides.start_time actual_start_time, planned_rides.start_time planned_start_time, planned_rides.gtfs_ride_id gtfs_ride_id from (
-(select siri_ride.scheduled_start_time start_time from siri_ride
-join siri_route sr on siri_ride.siri_route_id = sr.id
-where sr.operator_ref= :operator_ref and sr.line_ref= :line_ref and date_trunc('day', siri_ride.scheduled_start_time) between :date_from and :date_to)
-              ) actual_rides
-full outer join
-(select gtfs_ride.start_time start_time, gtfs_ride.id gtfs_ride_id from gtfs_ride
-    join gtfs_route gr on gtfs_ride.gtfs_route_id = gr.id
-where gr.operator_ref= :operator_ref and gr.line_ref= :line_ref and date_trunc('day', gtfs_ride.start_time) between :date_from and :date_to ) planned_rides
-on actual_rides.start_time=planned_rides.start_time
+    select
+        actual_rides.start_time::timestamptz as actual_start_time,
+        planned_rides.start_time::timestamptz as planned_start_time,
+        planned_rides.gtfs_ride_id
+    from
+        (
+            (select
+                siri_ride.scheduled_start_time as start_time
+            from
+                siri_ride
+                join siri_route sr on siri_ride.siri_route_id = sr.id
+            where
+                sr.operator_ref = :operator_ref
+                and sr.line_ref = :line_ref
+                and date_trunc('day', siri_ride.scheduled_start_time) between :date_from and :date_to
+            ) actual_rides
+        full outer join
+            (select 
+                gtfs_ride.start_time as start_time, gtfs_ride.id as gtfs_ride_id
+            from
+                gtfs_ride
+                join gtfs_route gr on gtfs_ride.gtfs_route_id = gr.id
+            where
+                gr.operator_ref = :operator_ref
+                and gr.line_ref = :line_ref
+                and date_trunc('day', gtfs_ride.start_time) between :date_from and :date_to
+            ) planned_rides
+        on
+            actual_rides.start_time = planned_rides.start_time
+    )
     """
     sql_params = {
         'date_from': date_from,
