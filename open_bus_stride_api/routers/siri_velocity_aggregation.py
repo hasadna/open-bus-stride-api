@@ -10,25 +10,34 @@ from . import common
 TAG = "siri"
 QUERY = """
     WITH RollingAvg AS (
+        with RoundedLonLat as (
+            SELECT 
+                (CAST(lon AS NUMERIC) * POWER(2, :rounding_precision) + 0.5)::INT / POWER(2, :rounding_precision) AS rounded_lon,
+                (CAST(lat AS NUMERIC) * POWER(2, :rounding_precision) + 0.5)::INT / POWER(2, :rounding_precision) AS rounded_lat,
+                velocity,
+                recorded_at_time
+            FROM 
+                siri_vehicle_location
+            WHERE 
+                velocity > :velocity_min
+                AND velocity < :velocity_max 
+                AND lon BETWEEN :lon_min AND :lon_max
+                AND lat BETWEEN :lat_min AND :lat_max
+                AND recorded_at_time BETWEEN :recorded_from AND (:recorded_from + INTERVAL '1 day')
+        )
         SELECT 
-            ROUND(CAST(lon AS NUMERIC), :rounding_precision) AS rounded_lon,
-            ROUND(CAST(lat AS NUMERIC), :rounding_precision) AS rounded_lat,
+            rounded_lon,
+            rounded_lat,
             AVG(velocity) OVER (
                 PARTITION BY 
-                    ROUND(CAST(lon AS NUMERIC), :rounding_precision),
-                    ROUND(CAST(lat AS NUMERIC), :rounding_precision)
+                    rounded_lon,
+                    rounded_lat
                 ORDER BY 
-                    recorded_at_time 
+                    recorded_at_time
                 ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING
             ) AS rolling_average
         FROM 
-            siri_vehicle_location
-        WHERE 
-            velocity > :velocity_min
-            AND velocity < :velocity_max 
-            AND lon BETWEEN :lon_min AND :lon_max
-            AND lat BETWEEN :lat_min AND :lat_max
-            AND recorded_at_time BETWEEN :recorded_from AND (:recorded_from + INTERVAL '1 day')
+            RoundedLonLat
     )
     SELECT 
         rounded_lon::DOUBLE PRECISION AS rounded_lon,
@@ -73,7 +82,7 @@ def siri_velocity_aggregation(
     lat_min: float = Query(29.50, description="minimum latitude bound"),
     lat_max: float = Query(33.33, description="maximum latitude bound"),
     rounding_precision: int = Query(
-        2, ge=0, le=6, description="number of decimals to round lon/lat"
+        2, ge=0, le=10, description="lon/lat scaling factor, in powers of 2"
     ),
 ) -> List[SiriVelocityAggregationPydanticModel]:
     sql = text(QUERY)
