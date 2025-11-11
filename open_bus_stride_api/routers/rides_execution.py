@@ -27,8 +27,8 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
           get_count: bool = common.param_get_count(),
           date_from: datetime.date = common.doc_param('date', filter_type='date_from', default=...),
           date_to: datetime.date = common.doc_param('date', filter_type='date_to', default=...),
-          operator_ref: int = common.doc_param('operator_ref', filter_type='equals', description="Line operator ref."),
-          line_ref: int = common.doc_param('line_ref', filter_type='equals', description="Line ref.")):
+          operator_ref: int = common.doc_param('operator_ref', filter_type='equals', description="Line operator ref.", default=...),
+          line_ref: int = common.doc_param('line_ref', filter_type='equals', description="Line ref.", default=...),):
     sql = """
     select
         actual_rides.start_time::timestamptz as actual_start_time,
