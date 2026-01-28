@@ -31,24 +31,27 @@ def list_(sql, sql_params, default_limit, limit, offset, get_count, order_by, sk
                 sql_order_by = ' order by ' + ', '.join([f'{fieldname} {direction}' for direction, fieldname in order_by_args])
             if limit is not None:
                 sql_limit = f' limit {limit}'
+            assert sql_limit and 0 < limit <= 1000, "due to abuse, limit must be between 1 and 1000, contact us if you need more"
             if offset is not None:
                 sql_offset = f' offset {offset}'
             if sql_order_by or sql_limit or sql_offset:
                 sql = f'select * from ({sql}) a {sql_order_by}{sql_limit}{sql_offset}'
-            iterator = (o for o in session.execute(sql, sql_params, execution_options={'stream_results': True}))
-            first_items = list(itertools.islice(iterator, QUERY_PAGE_SIZE + 1))
-            if len(first_items) <= QUERY_PAGE_SIZE:
-                common.debug_print(f'got {len(first_items)} items - returning without streaming')
-                data = [common.post_process_response_obj(obj, None) for obj in first_items]
-                session.close()
-                return data
-            else:
-                raise Exception("streaming responses disabled due to abuse, if you need this feature please contact us")
-                common.debug_print(f'got {len(first_items)} items - returning using streaming')
-                return fastapi.responses.StreamingResponse(
-                    common.streaming_response_iterator(session, first_items, iterator, None),
-                    media_type="application/json"
-                )
+            data = [common.post_process_response_obj(obj, None) for obj in session.execute(sql, sql_params)]
+            session.close()
+            return data
+            # iterator = (o for o in session.execute(sql, sql_params, execution_options={'stream_results': True}))
+            # first_items = list(itertools.islice(iterator, QUERY_PAGE_SIZE + 1))
+            # if len(first_items) <= QUERY_PAGE_SIZE:
+            #     common.debug_print(f'got {len(first_items)} items - returning without streaming')
+            #     data = [common.post_process_response_obj(obj, None) for obj in first_items]
+            #     session.close()
+            #     return data
+            # else:
+            #     common.debug_print(f'got {len(first_items)} items - returning using streaming')
+            #     return fastapi.responses.StreamingResponse(
+            #         common.streaming_response_iterator(session, first_items, iterator, None),
+            #         media_type="application/json"
+            #     )
     except:
         session.close()
         raise

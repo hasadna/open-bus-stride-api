@@ -81,23 +81,25 @@ def get_list(*args, convert_to_dict=None, **kwargs):
             return fastapi.Response(content=str(q_count), media_type="application/json")
         else:
             debug_print(f'Getting results for query: {q}')
-            if not hasattr(q, '__q_limit') or not q.__q_limit or q.__q_limit > QUERY_PAGE_SIZE:
-                debug_print(f'adding yield_per({QUERY_PAGE_SIZE}) to query')
-                q = q.yield_per(QUERY_PAGE_SIZE)
-            q_iterator = (obj for obj in q)
-            first_items = list(itertools.islice(q_iterator, QUERY_PAGE_SIZE + 1))
-            if len(first_items) <= QUERY_PAGE_SIZE:
-                debug_print(f'got {len(first_items)} items - returning without streaming')
-                data = [post_process_response_obj(obj, convert_to_dict) for obj in first_items]
-                session.close()
-                return data
-            else:
-                raise Exception("streaming responses disabled due to abuse, if you need this feature please contact us")
-                debug_print(f'got {len(first_items)} items - returning using streaming')
-                return fastapi.responses.StreamingResponse(
-                    streaming_response_iterator(session, first_items, q_iterator, convert_to_dict),
-                    media_type="application/json"
-                )
+            data = [post_process_response_obj(obj, convert_to_dict) for obj in q]
+            session.close()
+            return data
+            # if not hasattr(q, '__q_limit') or not q.__q_limit or q.__q_limit > QUERY_PAGE_SIZE:
+            #     debug_print(f'adding yield_per({QUERY_PAGE_SIZE}) to query')
+            #     q = q.yield_per(QUERY_PAGE_SIZE)
+            # q_iterator = (obj for obj in q)
+            # first_items = list(itertools.islice(q_iterator, QUERY_PAGE_SIZE + 1))
+            # if len(first_items) <= QUERY_PAGE_SIZE:
+            #     debug_print(f'got {len(first_items)} items - returning without streaming')
+            #     data = [post_process_response_obj(obj, convert_to_dict) for obj in first_items]
+            #     session.close()
+            #     return data
+            # else:
+            #     debug_print(f'got {len(first_items)} items - returning using streaming')
+            #     return fastapi.responses.StreamingResponse(
+            #         streaming_response_iterator(session, first_items, q_iterator, convert_to_dict),
+            #         media_type="application/json"
+            #     )
     except:
         session.close()
         raise
@@ -166,6 +168,7 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
         limit = default_limit
     if limit:
         limit = int(limit)
+    assert 0 < limit <= 1000, "due to abuse, maximum limit per request is 1000 items, contact us if you need more"
     if filters is None:
         filters = []
     if get_base_session_query_callback is None:
