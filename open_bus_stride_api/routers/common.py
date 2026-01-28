@@ -168,7 +168,7 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
         limit = default_limit
     if limit:
         limit = int(limit)
-    assert get_count or (limit and 0 < limit <= 1000), "due to abuse, maximum limit per request is 1000 items, contact us if you need more"
+    assert get_count or (limit and 0 < limit <= 15000), "due to abuse, maximum limit per request is 15000 items, contact us if you need more"
     if filters is None:
         filters = []
     if get_base_session_query_callback is None:

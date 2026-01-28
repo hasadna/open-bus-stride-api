@@ -31,7 +31,7 @@ def list_(sql, sql_params, default_limit, limit, offset, get_count, order_by, sk
                 sql_order_by = ' order by ' + ', '.join([f'{fieldname} {direction}' for direction, fieldname in order_by_args])
             if limit is not None:
                 sql_limit = f' limit {limit}'
-            assert get_count or (sql_limit and 0 < limit <= 1000), "due to abuse, limit must be between 1 and 1000, contact us if you need more"
+            assert get_count or (sql_limit and 0 < limit <= 15000), "due to abuse, limit must be between 1 and 15000, contact us if you need more"
             if offset is not None:
                 sql_offset = f' offset {offset}'
             if sql_order_by or sql_limit or sql_offset:
