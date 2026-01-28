@@ -92,6 +92,7 @@ def get_list(*args, convert_to_dict=None, **kwargs):
                 session.close()
                 return data
             else:
+                raise Exception("streaming responses disabled due to abuse, if you need this feature please contact us")
                 debug_print(f'got {len(first_items)} items - returning using streaming')
                 return fastapi.responses.StreamingResponse(
                     streaming_response_iterator(session, first_items, q_iterator, convert_to_dict),

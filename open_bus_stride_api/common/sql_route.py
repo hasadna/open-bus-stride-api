@@ -43,7 +43,7 @@ def list_(sql, sql_params, default_limit, limit, offset, get_count, order_by, sk
                 session.close()
                 return data
             else:
-                raise Exception("sorry, streaming responses are not supported at the moment due to abuse, please contact us if you need this feature")
+                raise Exception("streaming responses disabled due to abuse, if you need this feature please contact us")
                 common.debug_print(f'got {len(first_items)} items - returning using streaming')
                 return fastapi.responses.StreamingResponse(
                     common.streaming_response_iterator(session, first_items, iterator, None),
