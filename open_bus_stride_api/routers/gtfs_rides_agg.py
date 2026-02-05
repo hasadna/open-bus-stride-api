@@ -138,4 +138,4 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
         sql_params['exclude_hour_to'] = exclude_hours_to
 
     sql += f" group by {', '.join(group_by_fields)}"
-    return sql_route.list_(sql, sql_params, None, None, None, None, None, True)
+    return sql_route.list_(sql, sql_params, None, None, None, None, None, True, allow_no_limit=True)

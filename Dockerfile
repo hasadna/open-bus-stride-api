@@ -12,6 +12,7 @@ RUN pip install -e .
 ARG VERSION=local-docker
 RUN echo "VERSION = '${VERSION}'" > open_bus_stride_api/version.py
 ENV SQLALCHEMY_APPLICATION_NAME=api
-ENV SQLALCHEMY_APPLICATION_VERSION=${VERSION}
+# for more efficient sql connection pooling with pgbouncer we don't include the version here
+ENV SQLALCHEMY_APPLICATION_VERSION=-
 ENV PYTHONUNBUFFERED=1
 ENTRYPOINT ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-c", "gunicorn_conf.py", "open_bus_stride_api.main:app"]
