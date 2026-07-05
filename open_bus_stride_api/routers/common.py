@@ -180,8 +180,8 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
     for filter in filters:
         session_query = globals()['get_list_query_filter_{}'.format(filter['type'])](session_query, filters, filter)
     if distinct_on:
-        # Opt-in de-duplication via Postgres DISTINCT ON (distinct_on...). Postgres requires the
-        # leading ORDER BY columns to match the DISTINCT ON key, which collides with the caller's
+        # De-duplicate the result set via Postgres DISTINCT ON (distinct_on...). Postgres requires
+        # the leading ORDER BY columns to match the DISTINCT ON key, which collides with the caller's
         # public order_by. So we apply DISTINCT ON in an inner query ordered by the dedup key (with
         # the primary key appended as a deterministic tie-breaker so the surviving row is stable),
         # then re-sort in the outer query via from_self() - this keeps the caller's order_by / limit
@@ -410,15 +410,6 @@ def param_filter_greater_or_equal(what_singular, example):
 
 def param_filter_lower_or_equal(what_singular, example):
     return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value. Example value: {example}')
-
-
-def param_distinct(distinct_description, default=False):
-    return fastapi.Query(
-        default,
-        description=f'Set to "true" to de-duplicate the results: {distinct_description} '
-                    f'Only a single representative row is returned per group. '
-                    f'Disabled by default, returning the raw (potentially duplicated) rows.'
-    )
 
 
 def param_order_by(default='id asc', as_RouteParam=False):

@@ -110,39 +110,58 @@ def test_siri_vehicle_locations(client):
     )
 
 
-def test_siri_vehicle_locations_distinct(client):
-    # The SIRI ETL re-stamps a vehicle which has not moved with the same GPS fix on every
-    # per-minute snapshot, so the raw endpoint returns many rows sharing
-    # (siri_ride__vehicle_ref, recorded_at_time, lat, lon). The opt-in distinct=true param must
-    # collapse those to a single representative row while leaving order_by / limit / get_count intact.
+def test_siri_vehicle_locations_dedup(client):
+    # The SIRI ETL re-stamps a vehicle which has not moved with the same GPS fix on every per-minute
+    # snapshot, so the raw table holds many rows sharing (vehicle_ref, recorded_at_time, lat, lon).
+    # This endpoint always collapses those to a single representative row, while leaving the public
+    # order_by / limit / get_count intact.
     from collections import Counter
+
+    from open_bus_stride_db import model
+    from open_bus_stride_db.db import get_session
 
     def key(loc):
         return (loc['siri_ride__vehicle_ref'], loc['recorded_at_time'], loc['lat'], loc['lon'])
 
-    # pick a ride that actually has vehicle locations, then compare raw vs de-duplicated for it
+    # pick a ride that actually has vehicle locations
     recent = client.get('/siri_vehicle_locations/list', params={'limit': 500, 'order_by': 'id desc'}).json()
     assert recent, 'no siri vehicle locations available to test against'
     ride_id = Counter(loc['siri_ride__id'] for loc in recent).most_common(1)[0][0]
 
     ride_params = {'siri_rides__ids': str(ride_id), 'limit': 15000, 'order_by': 'recorded_at_time asc'}
-    raw = client.get('/siri_vehicle_locations/list', params=ride_params).json()
-    distinct = client.get('/siri_vehicle_locations/list', params={**ride_params, 'distinct': 'true'}).json()
+    rows = client.get('/siri_vehicle_locations/list', params=ride_params).json()
 
     # each (vehicle_ref, recorded_at_time, lat, lon) appears at most once - the core invariant
-    distinct_keys = [key(loc) for loc in distinct]
-    assert len(distinct_keys) == len(set(distinct_keys)), 'distinct=true returned duplicate fixes'
-    # de-dup never invents or drops fixes
-    assert len(distinct) <= len(raw)
-    if len(raw) < ride_params['limit']:  # only when neither side was truncated by the limit
-        assert set(distinct_keys) == {key(loc) for loc in raw}
-        assert len(distinct) == len({key(loc) for loc in raw})
+    keys = [key(loc) for loc in rows]
+    assert len(keys) == len(set(keys)), 'endpoint returned duplicate fixes'
     # the public order_by is preserved through the inner DISTINCT ON re-sort
-    times = [loc['recorded_at_time'] for loc in distinct]
-    assert times == sorted(times), 'distinct=true broke the requested order_by'
+    times = [loc['recorded_at_time'] for loc in rows]
+    assert times == sorted(times), 'de-duplication broke the requested order_by'
 
-    # get_count must count the de-duplicated rows, not the raw ones
-    count_params = {'siri_rides__ids': str(ride_id), 'get_count': 'true'}
-    raw_count = int(client.get('/siri_vehicle_locations/list', params=count_params).text)
-    distinct_count = int(client.get('/siri_vehicle_locations/list', params={**count_params, 'distinct': 'true'}).text)
-    assert distinct_count <= raw_count
+    # independent oracle straight from the DB: the endpoint's de-duplicated count must equal the
+    # number of distinct (vehicle_ref, recorded_at_time, lat, lon) tuples in the raw table, and the
+    # raw table must have at least as many rows (i.e. de-dup never invents rows, and does collapse
+    # the re-stamped ones when they exist).
+    with get_session() as session:
+        raw_fixes = (
+            session.query(
+                model.SiriRide.vehicle_ref,
+                model.SiriVehicleLocation.recorded_at_time,
+                model.SiriVehicleLocation.lat,
+                model.SiriVehicleLocation.lon,
+            )
+            .join(model.SiriRideStop, model.SiriRideStop.id == model.SiriVehicleLocation.siri_ride_stop_id)
+            .join(model.SiriRide, model.SiriRide.id == model.SiriRideStop.siri_ride_id)
+            .filter(model.SiriRide.id == ride_id)
+            .all()
+        )
+    raw_count = len(raw_fixes)
+    expected_distinct = len(set(raw_fixes))
+
+    deduped_count = int(client.get(
+        '/siri_vehicle_locations/list', params={'siri_rides__ids': str(ride_id), 'get_count': 'true'}
+    ).text)
+    assert deduped_count == expected_distinct, 'get_count did not reflect the de-duplicated rows'
+    assert deduped_count <= raw_count
+    if len(rows) < ride_params['limit']:  # list wasn't truncated by the limit
+        assert len(rows) == expected_distinct
