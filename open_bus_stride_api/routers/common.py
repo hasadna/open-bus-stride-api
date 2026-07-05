@@ -160,7 +160,7 @@ def process_list_query_order_by_limit_offset(skip_order_by, order_by, get_count,
 def get_list_query(session, db_model, limit, offset, filters=None, default_limit=DEFAULT_LIMIT,
                    order_by=None, skip_order_by=False, get_count=False,
                    post_session_query_hook=None, pydantic_model=...,
-                   get_base_session_query_callback=None):
+                   get_base_session_query_callback=None, distinct_on=None):
     debug_print(f'get_list_query: limit={limit}, offset={offset}, order_by={order_by}')
     if get_count:
         limit, offset, default_limit, order_by = None, None, None, None
@@ -179,6 +179,19 @@ def get_list_query(session, db_model, limit, offset, filters=None, default_limit
         session_query = post_session_query_hook(session_query)
     for filter in filters:
         session_query = globals()['get_list_query_filter_{}'.format(filter['type'])](session_query, filters, filter)
+    if distinct_on:
+        # Opt-in de-duplication via Postgres DISTINCT ON (distinct_on...). Postgres requires the
+        # leading ORDER BY columns to match the DISTINCT ON key, which collides with the caller's
+        # public order_by. So we apply DISTINCT ON in an inner query ordered by the dedup key (with
+        # the primary key appended as a deterministic tie-breaker so the surviving row is stable),
+        # then re-sort in the outer query via from_self() - this keeps the caller's order_by / limit
+        # / offset (and get_count) working on the de-duplicated result set.
+        session_query = (
+            session_query
+            .distinct(*distinct_on)
+            .order_by(*distinct_on, db_model.id)
+            .from_self()
+        )
     q_order_by_args, q_limit, q_offset = process_list_query_order_by_limit_offset(skip_order_by, order_by, get_count, limit, offset)
     if q_order_by_args is not None:
         order_by_args = []
@@ -397,6 +410,15 @@ def param_filter_greater_or_equal(what_singular, example):
 
 def param_filter_lower_or_equal(what_singular, example):
     return fastapi.Query(None, description=f'Filter by {what_singular}. Only return items which have a numeric value lower than or equal to given value. Example value: {example}')
+
+
+def param_distinct(distinct_description, default=False):
+    return fastapi.Query(
+        default,
+        description=f'Set to "true" to de-duplicate the results: {distinct_description} '
+                    f'Only a single representative row is returned per group. '
+                    f'Disabled by default, returning the raw (potentially duplicated) rows.'
+    )
 
 
 def param_order_by(default='id asc', as_RouteParam=False):

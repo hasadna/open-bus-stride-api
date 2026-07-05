@@ -94,6 +94,12 @@ def list_(limit: int = common.param_limit(),
           siri_rides__schedualed_start_time_to: datetime.datetime = common.doc_param('siri ride scheduled start time', filter_type='datetime_to'),
           siri_rides__ids: str = common.doc_param('siri ride id', filter_type='list'),
           siri_routes__ids: str = common.doc_param('siri route id', filter_type='list'),
+          distinct: bool = common.param_distinct(
+              'The SIRI ETL writes a full snapshot of the MOT feed every minute with no cross-snapshot '
+              'de-duplication, so a vehicle which has not moved re-emits the same GPS fix each minute. '
+              'When enabled, rows sharing the same '
+              '(siri_ride__vehicle_ref, recorded_at_time, lat, lon) are collapsed to one.'
+          ),
           ):
     return common.get_list(
         SiriVehicleLocation, limit, offset,
@@ -119,6 +125,12 @@ def list_(limit: int = common.param_limit(),
         post_session_query_hook=_post_session_query_hook,
         get_count=get_count,
         pydantic_model=PYDANTIC_MODEL,
+        distinct_on=[
+            model.SiriRide.vehicle_ref,
+            SiriVehicleLocation.recorded_at_time,
+            SiriVehicleLocation.lat,
+            SiriVehicleLocation.lon,
+        ] if distinct else None,
     )
 
 
