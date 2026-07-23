@@ -49,17 +49,20 @@ Use this if you prefer to run directly from your local Python environment.
 
 Ensure you have **Python 3.8** installed.
 
+Ensure a local clone of [open-bus-stride-db](https://github.com/hasadna/open-bus-stride-db) exists at:
+
+```
+../open-bus-stride-db
+```
+
+`requirements-dev.txt` installs it as an editable dependency, so it must already
+be cloned before the next step.
+
 ```bash
 python3.8 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install --upgrade pip
 pip install -r requirements-dev.txt
-```
-
-Ensure a local clone of [open-bus-stride-db](https://github.com/hasadna/open-bus-stride-db) exists at:
-
-```
-../open-bus-stride-db
 ```
 
 #### 2. Database Connection
@@ -86,6 +89,10 @@ Then source it:
 ```bash
 uvicorn open_bus_stride_api.main:app --reload
 ```
+
+This is for local development (`--reload` picks up code changes). In Docker/production
+the app is served via `gunicorn` with a `uvicorn` worker class instead - see the
+`ENTRYPOINT` in [Dockerfile](Dockerfile) and [gunicorn_conf.py](gunicorn_conf.py).
 
 Access the interactive API docs at:
 👉 [http://localhost:8000/docs](http://localhost:8000/docs)
