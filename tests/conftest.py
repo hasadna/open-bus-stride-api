@@ -26,7 +26,7 @@ def stride_client():
                 if stride.get('/', {})['ok']:
                     ok = True
                     break
-            except:
+            except Exception:
                 pass
         assert ok
         yield stride
