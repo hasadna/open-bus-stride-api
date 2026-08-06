@@ -74,42 +74,94 @@ def _post_session_query_hook(session_query: sqlalchemy.orm.Query):
 
 
 @common.router_list(router, TAG, SiriVehicleLocationWithRelatedPydanticModel, WHAT_PLURAL)
-def list_(limit: int = common.param_limit(),
-          offset: int = common.param_offset(),
-          get_count: bool = common.param_get_count(),
-          siri_vehicle_location_ids: str = common.doc_param('siri vehicle location id', filter_type='list'),
-          siri_snapshot_ids: str = common.doc_param('siri snapshot id', filter_type='list'),
-          siri_ride_stop_ids: str = common.doc_param('siri ride stop id', filter_type='list'),
-          recorded_at_time_from: datetime.datetime = common.doc_param('recorded at time', filter_type='datetime_from'),
-          recorded_at_time_to: datetime.datetime = common.doc_param('recorded at time', filter_type='datetime_to'),
-          lon__greater_or_equal: float = common.doc_param('lon', filter_type='greater_or_equal', example='34.808'),
-          lon__lower_or_equal: float = common.doc_param('lon', filter_type='lower_or_equal', example='34.808'),
-          lat__greater_or_equal: float = common.doc_param('lat', filter_type='greater_or_equal', example='31.961'),
-          lat__lower_or_equal: float = common.doc_param('lat', filter_type='lower_or_equal', example='31.961'),
-          order_by: str = common.param_order_by(),
-          siri_routes__line_ref: str = common.doc_param('siri route line ref', filter_type='equals'),
-          siri_ride__vehicle_ref: str = common.doc_param('siri ride vehicle ref', filter_type='equals'),
-          siri_routes__operator_ref: str = common.doc_param('siri route operator ref', filter_type='equals'),
-          siri_rides__schedualed_start_time_from: datetime.datetime = common.doc_param('siri ride scheduled start time', filter_type='datetime_from'),
-          siri_rides__schedualed_start_time_to: datetime.datetime = common.doc_param('siri ride scheduled start time', filter_type='datetime_to'),
-          siri_rides__ids: str = common.doc_param('siri ride id', filter_type='list'),
-          siri_routes__ids: str = common.doc_param('siri route id', filter_type='list'),
-          ):
+def list_(
+        limit: int = common.param_limit(),
+        offset: int = common.param_offset(),
+        get_count: bool = common.param_get_count(),
+        siri_vehicle_location_ids: str = common.doc_param('siri vehicle location id', filter_type='list'),
+        siri_snapshot_ids: str = common.doc_param('siri snapshot id', filter_type='list'),
+        siri_ride_stop_ids: str = common.doc_param('siri ride stop id', filter_type='list'),
+        recorded_at_time_from: datetime.datetime = common.doc_param('recorded at time', filter_type='datetime_from'),
+        recorded_at_time_to: datetime.datetime = common.doc_param('recorded at time', filter_type='datetime_to'),
+        lon__greater_or_equal: float = common.doc_param('lon', filter_type='greater_or_equal', example='34.808'),
+        lon__lower_or_equal: float = common.doc_param('lon', filter_type='lower_or_equal', example='34.808'),
+        lat__greater_or_equal: float = common.doc_param('lat', filter_type='greater_or_equal', example='31.961'),
+        lat__lower_or_equal: float = common.doc_param('lat', filter_type='lower_or_equal', example='31.961'),
+        order_by: str = common.param_order_by(),
+        siri_routes__line_ref: str = common.doc_param('siri route line ref', filter_type='equals'),
+        siri_ride__vehicle_ref: str = common.doc_param('siri ride vehicle ref', filter_type='equals'),
+        siri_routes__operator_ref: str = common.doc_param('siri route operator ref', filter_type='equals'),
+        siri_rides__ids: str = common.doc_param('siri ride id', filter_type='list'),
+        siri_routes__ids: str = common.doc_param('siri route id', filter_type='list'),
+
+        # --- Deprecated (misspelled) scheduled start time params ---
+        # Kept for backward compatibility. Do not remove without a major version bump,
+        # since existing consumers (including the hackathon repo) rely on this spelling.
+        # NOTE: common.doc_param() does not currently support a `deprecated` kwarg,
+        # so deprecation is communicated via the description text only.
+        siri_rides__schedualed_start_time_from: typing.Optional[datetime.datetime] = common.doc_param(
+            'siri ride scheduled start time',
+            filter_type='datetime_from',
+            description=(
+                '[DEPRECATED] Misspelled parameter name, kept for backward compatibility. '
+                'Use "siri_rides__scheduled_start_time_from" instead.'
+            ),
+        ),
+        siri_rides__schedualed_start_time_to: typing.Optional[datetime.datetime] = common.doc_param(
+            'siri ride scheduled start time',
+            filter_type='datetime_to',
+            description=(
+                '[DEPRECATED] Misspelled parameter name, kept for backward compatibility. '
+                'Use "siri_rides__scheduled_start_time_to" instead.'
+            ),
+        ),
+
+        # --- Preferred (correctly spelled) scheduled start time params ---
+        siri_rides__scheduled_start_time_from: typing.Optional[datetime.datetime] = common.doc_param(
+            'siri ride scheduled start time',
+            filter_type='datetime_from',
+            description='Preferred parameter. Replaces the deprecated "siri_rides__schedualed_start_time_from".',
+        ),
+        siri_rides__scheduled_start_time_to: typing.Optional[datetime.datetime] = common.doc_param(
+            'siri ride scheduled start time',
+            filter_type='datetime_to',
+            description='Preferred parameter. Replaces the deprecated "siri_rides__schedualed_start_time_to".',
+        ),
+):
+    # Preferred (correctly spelled) param wins if both are provided.
+    resolved_scheduled_start_time_from = (
+        siri_rides__scheduled_start_time_from
+        if siri_rides__scheduled_start_time_from is not None
+        else siri_rides__schedualed_start_time_from
+    )
+    resolved_scheduled_start_time_to = (
+        siri_rides__scheduled_start_time_to
+        if siri_rides__scheduled_start_time_to is not None
+        else siri_rides__schedualed_start_time_to
+    )
+
     return common.get_list(
         SiriVehicleLocation, limit, offset,
         [
             {'type': 'equals', 'field': model.SiriRoute.line_ref, 'value': siri_routes__line_ref},
             {'type': 'equals', 'field': model.SiriRoute.operator_ref, 'value': siri_routes__operator_ref},
             {'type': 'in', 'field': model.SiriRoute.id, 'value': siri_routes__ids},
-            {'type': 'datetime_to', 'field': model.SiriRide.scheduled_start_time, 'value': siri_rides__schedualed_start_time_to},
-            {'type': 'datetime_from', 'field': model.SiriRide.scheduled_start_time, 'value': siri_rides__schedualed_start_time_from},
+
+            {'type': 'datetime_from', 'field': model.SiriRide.scheduled_start_time,
+             'value': resolved_scheduled_start_time_from},
+            {'type': 'datetime_to', 'field': model.SiriRide.scheduled_start_time,
+             'value': resolved_scheduled_start_time_to},
+
             {'type': 'in', 'field': model.SiriRide.id, 'value': siri_rides__ids},
             {'type': 'in', 'field': model.SiriRide.vehicle_ref, 'value': siri_ride__vehicle_ref},
+
             {'type': 'in', 'field': SiriVehicleLocation.id, 'value': siri_vehicle_location_ids},
             {'type': 'in', 'field': SiriVehicleLocation.siri_snapshot_id, 'value': siri_snapshot_ids},
             {'type': 'in', 'field': SiriVehicleLocation.siri_ride_stop_id, 'value': siri_ride_stop_ids},
+
             {'type': 'datetime_from', 'field': SiriVehicleLocation.recorded_at_time, 'value': recorded_at_time_from},
             {'type': 'datetime_to', 'field': SiriVehicleLocation.recorded_at_time, 'value': recorded_at_time_to},
+
             {'type': 'greater_or_equal', 'field': model.SiriVehicleLocation.lon, 'value': lon__greater_or_equal},
             {'type': 'lower_or_equal', 'field': model.SiriVehicleLocation.lon, 'value': lon__lower_or_equal},
             {'type': 'greater_or_equal', 'field': model.SiriVehicleLocation.lat, 'value': lat__greater_or_equal},
