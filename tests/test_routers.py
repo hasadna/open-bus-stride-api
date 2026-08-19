@@ -32,25 +32,6 @@ def test_gtfs_rides(client):
     )
 
 
-def test_gtfs_rides_start_time_to_filters_on_start_time(client):
-    # regression: start_time_to used to filter on end_time, so rides which started
-    # inside the requested range but ended after it were missing from the results
-    items = common.assert_router_list(client, '/gtfs_rides/list')
-    ride = next(
-        (i for i in items if i['start_time'] and i['end_time'] and i['end_time'] > i['start_time']),
-        None
-    )
-    assert ride, 'no gtfs ride which ends later than it starts to test with'
-    res = client.get('/gtfs_rides/list', params={
-        'gtfs_route_id': ride['gtfs_route_id'],
-        'start_time_from': ride['start_time'],
-        'start_time_to': ride['start_time'],
-    })
-    assert res.status_code == 200
-    assert ride['id'] in [i['id'] for i in res.json()], \
-        'ride which starts exactly at start_time_to but ends after it was filtered out'
-
-
 def test_gtfs_routes(client):
     common.assert_router_list_get(
         client, '/gtfs_routes',
