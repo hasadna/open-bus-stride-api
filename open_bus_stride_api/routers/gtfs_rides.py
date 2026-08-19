@@ -61,7 +61,7 @@ gtfs_ride_filter_params = [
     ),
     common.RouteParam(
         'start_time_to', datetime.datetime, common.DocParam('start time to', filter_type='datetime_to'),
-        {'type': 'datetime_to', 'field': model.GtfsRide.end_time},
+        {'type': 'datetime_to', 'field': model.GtfsRide.start_time},
     ),
 ]
 
