@@ -42,6 +42,8 @@ GROUP_BY_PYDANTIC_MODEL = GtfsRidesAggGroupByPydanticModel
 DEFAULT_LIMIT = 1000
 ALLOWED_GROUP_BY_FIELDS = ['gtfs_route_date', 'gtfs_route_hour', 'operator_ref', 'day_of_week', 'line_ref']
 AGG_VIEW_FIELDS = ['gtfs_route_date', 'gtfs_route_hour']
+AGGREGATE_FIELDS = ['total_routes', 'total_planned_rides', 'total_actual_rides']
+LINE_REF_FIELDS = ['route_short_name', 'route_long_name']
 
 
 @common.router_list(router, TAG, PYDANTIC_MODEL, WHAT_PLURAL)
@@ -84,12 +86,36 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
     return sql_route.list_(dedent(sql), sql_params, DEFAULT_LIMIT, limit, offset, get_count, 'gtfs_route_hour asc, gtfs_route_id asc', False)
 
 
+def assert_valid_group_by_order_by(order_by, selected_fields):
+    """Validate order_by against the fields this request selects.
+
+    sql_route interpolates the field name into the SQL instead of binding it, so restricting
+    it to names this particular grouping produces is what turns a typo, or a field belonging
+    to a different group_by, into a readable message rather than a postgres error.
+    """
+    for element in order_by.split(','):
+        parts = element.split()
+        assert parts, f'Empty order_by element in: "{order_by}".'
+        assert len(parts) <= 2, f'Invalid order_by element: "{element.strip()}". Expected "<field> [asc|desc]".'
+        assert parts[0] in selected_fields, \
+            f'Invalid order_by field: {parts[0]}. Valid values for this group_by: {", ".join(selected_fields)}.'
+        if len(parts) == 2:
+            assert parts[1] in ('asc', 'desc'), f'Invalid order_by direction: {parts[1]}. Valid values: asc, desc.'
+
+
 @router.get("/group_by", tags=[TAG], response_model=typing.List[GROUP_BY_PYDANTIC_MODEL], description=f'{WHAT_SINGULAR} grouped by given fields.')
 def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='date_from', default=...),
               date_to: datetime.date = common.doc_param('date', filter_type='date_to', default=...),
               exclude_hours_from: int = common.doc_param('hour', filter_type='hour_from', description="Hours to exclude from search, currently used to filter out edge cases."),
               exclude_hours_to: int = common.doc_param('hour', filter_type='hour_to', description="Hours to exclude from search, currently used to filter out edge cases."),
-              group_by: str = fastapi.Query(..., description=f'Comma-separated list of fields to group by. Valid values: {", ".join(ALLOWED_GROUP_BY_FIELDS)}.')
+              group_by: str = fastapi.Query(..., description=f'Comma-separated list of fields to group by. Valid values: {", ".join(ALLOWED_GROUP_BY_FIELDS)}.'),
+              order_by: str = fastapi.Query(None, description=f'Comma-separated list of "<field> [asc|desc]" to order the groups by. '
+                                                              f'Valid fields are the ones this request groups by, {", ".join(AGGREGATE_FIELDS)}, '
+                                                              f'and {", ".join(LINE_REF_FIELDS)} when grouping by line_ref. '
+                                                              f'Combine with limit to fetch only the top groups instead of every one of them.'),
+              limit: int = fastapi.Query(None, description='Limit the number of returned groups. If not specified, every group is returned.'),
+              offset: int = common.param_offset(),
+              get_count: bool = common.param_get_count()
               ):
     group_by = [f.strip() for f in group_by.split(',') if f.strip()]
     assert all(f in ALLOWED_GROUP_BY_FIELDS for f in group_by), f'Invalid group_by fields: {group_by}. Valid values: {", ".join(ALLOWED_GROUP_BY_FIELDS)}.'
@@ -108,6 +134,12 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
             full_fieldname = f'rt.{fieldname}'
         select_fields.append(f'{full_fieldname} as {fieldname}')
         group_by_fields.append(full_fieldname)
+
+    if order_by:
+        selected_fields = [*group_by, *AGGREGATE_FIELDS]
+        if 'line_ref' in group_by:
+            selected_fields += LINE_REF_FIELDS
+        assert_valid_group_by_order_by(order_by, selected_fields)
 
     sql = dedent(f"""
         select
@@ -138,4 +170,7 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
         sql_params['exclude_hour_to'] = exclude_hours_to
 
     sql += f" group by {', '.join(group_by_fields)}"
-    return sql_route.list_(sql, sql_params, None, None, None, None, None, True, allow_no_limit=True)
+    # skip_order_by stays True without an order_by: sql_route builds a bare "order by" from an
+    # empty field list, which postgres rejects.
+    return sql_route.list_(sql, sql_params, None, limit, offset, get_count, order_by, not order_by,
+                           allow_no_limit=True)

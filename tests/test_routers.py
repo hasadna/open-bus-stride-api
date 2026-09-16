@@ -1,5 +1,7 @@
 import datetime
 
+import pytest
+
 from . import common
 
 
@@ -30,6 +32,63 @@ def test_gtfs_rides(client):
         get_get_count_params=lambda items: {'journey_ref_prefix': str(items[0]['journey_ref']),
                                             'gtfs_route_id': str(items[0]['gtfs_route_id'])}
     )
+
+
+def group_by_agg(client, params):
+    res = client.get('/gtfs_rides_agg/group_by', params=params)
+    assert res.status_code == 200, res.text
+    return res.json()
+
+
+def find_agg_date_with_groups(client, group_by, minimum):
+    """Params for a recent date which actually has `minimum` groups, so the assertions below
+    describe real data on whatever database the suite runs against."""
+    for minus_days in range(1, 15):
+        date = (datetime.datetime.now() - datetime.timedelta(days=minus_days)).date().isoformat()
+        params = {'date_from': date, 'date_to': date, 'group_by': group_by}
+        groups = group_by_agg(client, params)
+        if len(groups) >= minimum:
+            return params, groups
+    pytest.skip(f'no date in the last 14 days has {minimum} "{group_by}" groups to test with')
+
+
+def test_gtfs_rides_agg_group_by_order_by_limit(client):
+    params, groups = find_agg_date_with_groups(client, 'operator_ref', 2)
+    limit = len(groups) - 1
+
+    top = group_by_agg(client, {**params, 'order_by': 'total_planned_rides desc', 'limit': limit})
+
+    assert len(top) == limit
+    assert [g['total_planned_rides'] for g in top] \
+        == sorted((g['total_planned_rides'] for g in groups), reverse=True)[:limit]
+
+
+def test_gtfs_rides_agg_group_by_unordered_by_default(client):
+    # every existing consumer fetches without order_by/limit and expects the whole grouping
+    params, groups = find_agg_date_with_groups(client, 'operator_ref', 2)
+    assert len(group_by_agg(client, params)) == len(groups)
+
+
+def test_gtfs_rides_agg_group_by_get_count(client):
+    params, groups = find_agg_date_with_groups(client, 'operator_ref', 1)
+    res = client.get('/gtfs_rides_agg/group_by', params={**params, 'get_count': 'true'})
+    assert res.status_code == 200
+    assert int(res.text) == len(groups)
+
+
+@pytest.mark.parametrize('order_by,expected_error', [
+    ('line_ref', 'Invalid order_by field'),
+    ('total_routes desc; drop table gtfs_route --', 'Invalid order_by element'),
+    ('total_routes sideways', 'Invalid order_by direction'),
+])
+def test_gtfs_rides_agg_group_by_rejects_invalid_order_by(client, order_by, expected_error):
+    # a name which is not one of this request's own output fields is refused before any query
+    # runs, so it reads as a message about order_by rather than as a database error
+    with pytest.raises(AssertionError, match=expected_error):
+        client.get('/gtfs_rides_agg/group_by', params={
+            'date_from': '2026-01-01', 'date_to': '2026-01-01',
+            'group_by': 'operator_ref', 'order_by': order_by,
+        })
 
 
 def test_gtfs_routes(client):
