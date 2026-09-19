@@ -12,8 +12,10 @@ QUERY = """
     WITH RollingAvg AS (
         with RoundedLonLat as (
             SELECT 
-                (CAST(lon AS NUMERIC) * POWER(2, :rounding_precision) + 0.5)::INT / POWER(2, :rounding_precision) AS rounded_lon,
-                (CAST(lat AS NUMERIC) * POWER(2, :rounding_precision) + 0.5)::INT / POWER(2, :rounding_precision) AS rounded_lat,
+                -- A point belongs to the cell [k, k+1) / 2^precision where k = floor(x * 2^precision),
+                -- and we report that cell's centre: consumers draw it as half a cell either side.
+                (floor(lon * POWER(2, :rounding_precision)) + 0.5) / POWER(2, :rounding_precision) AS rounded_lon,
+                (floor(lat * POWER(2, :rounding_precision)) + 0.5) / POWER(2, :rounding_precision) AS rounded_lat,
                 velocity,
                 recorded_at_time
             FROM 
