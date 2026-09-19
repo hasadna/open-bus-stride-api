@@ -9,46 +9,32 @@ from . import common
 
 TAG = "siri"
 QUERY = """
-    WITH RollingAvg AS (
-        with RoundedLonLat as (
-            SELECT 
-                (CAST(lon AS NUMERIC) * POWER(2, :rounding_precision) + 0.5)::INT / POWER(2, :rounding_precision) AS rounded_lon,
-                (CAST(lat AS NUMERIC) * POWER(2, :rounding_precision) + 0.5)::INT / POWER(2, :rounding_precision) AS rounded_lat,
-                velocity,
-                recorded_at_time
-            FROM 
-                siri_vehicle_location
-            WHERE 
-                velocity > :velocity_min
-                AND velocity < :velocity_max 
-                AND lon BETWEEN :lon_min AND :lon_max
-                AND lat BETWEEN :lat_min AND :lat_max
-                AND recorded_at_time BETWEEN :recorded_from AND (:recorded_from + INTERVAL '1 day')
-        )
-        SELECT 
-            rounded_lon,
-            rounded_lat,
-            AVG(velocity) OVER (
-                PARTITION BY 
-                    rounded_lon,
-                    rounded_lat
-                ORDER BY 
-                    recorded_at_time
-                ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING
-            ) AS rolling_average
-        FROM 
-            RoundedLonLat
+    WITH RoundedLonLat AS (
+        SELECT
+            -- A point belongs to the cell [k, k+1) / 2^precision where k = floor(x * 2^precision),
+            -- and we report that cell's centre: consumers draw it as half a cell either side.
+            (floor(lon * POWER(2, :rounding_precision)) + 0.5) / POWER(2, :rounding_precision) AS rounded_lon,
+            (floor(lat * POWER(2, :rounding_precision)) + 0.5) / POWER(2, :rounding_precision) AS rounded_lat,
+            velocity
+        FROM
+            siri_vehicle_location
+        WHERE
+            velocity > :velocity_min
+            AND velocity < :velocity_max
+            AND lon BETWEEN :lon_min AND :lon_max
+            AND lat BETWEEN :lat_min AND :lat_max
+            AND recorded_at_time BETWEEN :recorded_from AND (:recorded_from + INTERVAL '1 day')
     )
-    SELECT 
+    SELECT
         rounded_lon::DOUBLE PRECISION AS rounded_lon,
         rounded_lat::DOUBLE PRECISION AS rounded_lat,
         COUNT(*) AS total_sample_count,
-        AVG(rolling_average) AS average_rolling_avg,
-        STDDEV(rolling_average) AS stddev_rolling_avg
+        AVG(velocity) AS average_rolling_avg,
+        STDDEV(velocity) AS stddev_rolling_avg
     FROM
-        RollingAvg
+        RoundedLonLat
     GROUP BY
-        rounded_lon, 
+        rounded_lon,
         rounded_lat
     ORDER BY
         rounded_lon, rounded_lat
