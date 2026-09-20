@@ -3,6 +3,7 @@ from typing import List, Optional
 
 import pydantic
 from fastapi import APIRouter, Query, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from . import common
@@ -43,8 +44,11 @@ QUERY = """
         rounded_lon::DOUBLE PRECISION AS rounded_lon,
         rounded_lat::DOUBLE PRECISION AS rounded_lat,
         COUNT(*) AS total_sample_count,
-        AVG(rolling_average) AS average_rolling_avg,
-        STDDEV(rolling_average) AS stddev_rolling_avg
+        -- velocity is an integer column, so AVG and STDDEV return numeric, which the driver
+        -- has to materialise as a Decimal per row. Cast back to float8 - the response field
+        -- is a float either way.
+        AVG(rolling_average)::DOUBLE PRECISION AS average_rolling_avg,
+        STDDEV(rolling_average)::DOUBLE PRECISION AS stddev_rolling_avg
     FROM
         RollingAvg
     GROUP BY
@@ -84,7 +88,7 @@ def siri_velocity_aggregation(
     rounding_precision: int = Query(
         2, ge=0, le=10, description="lon/lat scaling factor, in powers of 2"
     ),
-) -> List[SiriVelocityAggregationPydanticModel]:
+) -> JSONResponse:
     sql = text(QUERY)
     params = {
         "rounding_precision": rounding_precision,
@@ -99,6 +103,11 @@ def siri_velocity_aggregation(
     try:
         with common.get_session() as session:
             result = session.execute(sql, params)
-            return list(result.fetchall())
+            # A nationwide request at rounding_precision=10 returns over 100k cells, and
+            # re-validating every one of them against response_model costs more than the
+            # query. The query already selects exactly the response fields, in order, with
+            # the right types, so serialise the rows directly and let FastAPI pass the
+            # response through untouched. response_model still documents the schema.
+            return JSONResponse([dict(row._mapping) for row in result])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
