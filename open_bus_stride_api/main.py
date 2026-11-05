@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from sqlalchemy.exc import NoResultFound
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from .version import VERSION
 from .routers import ROUTER_NAMES
@@ -31,6 +32,8 @@ for router_name in ROUTER_NAMES:
             importlib.import_module('open_bus_stride_api.routers.{}'.format(router_name)).router,
         prefix='/{}'.format(router_name)
     )
+
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
 
 app.add_middleware(
     CORSMiddleware,
