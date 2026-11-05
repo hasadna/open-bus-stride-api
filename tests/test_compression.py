@@ -1,7 +1,7 @@
 def test_large_response_is_compressed(client):
     res = client.get('/openapi.json', headers={'Accept-Encoding': 'gzip'})
     assert res.status_code == 200
-    assert res.headers['content-encoding'] == 'gzip'
+    assert res.headers.get('content-encoding') == 'gzip'
     # The test client decodes the body transparently, so content-length is the
     # size on the wire and res.content is the size without compression.
     assert int(res.headers['content-length']) < len(res.content)
