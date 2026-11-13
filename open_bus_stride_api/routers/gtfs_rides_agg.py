@@ -71,7 +71,7 @@ def list_(limit: int = common.param_limit(default_limit=DEFAULT_LIMIT),
         'date_from': date_from,
         'date_to': date_to,
         'rt_date_from': date_from - datetime.timedelta(days=30),
-        'rt_date_to': date_from + datetime.timedelta(days=30),
+        'rt_date_to': date_to + datetime.timedelta(days=30),
     }
 
     if exclude_hours_from:
@@ -127,7 +127,7 @@ def group_by_(date_from: datetime.date = common.doc_param('date', filter_type='d
         'date_from': date_from,
         'date_to': date_to,
         'rt_date_from': date_from - datetime.timedelta(days=30),
-        'rt_date_to': date_from + datetime.timedelta(days=30),
+        'rt_date_to': date_to + datetime.timedelta(days=30),
     }
 
     if exclude_hours_from:

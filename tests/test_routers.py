@@ -108,3 +108,13 @@ def test_siri_vehicle_locations(client):
         client, '/siri_vehicle_locations',
         get_get_count_params=lambda items: {'siri_vehicle_location_ids': str(items[0]['id'])}
     )
+
+
+def test_gtfs_rides_agg_group_by_range_longer_than_30_days(client):
+    res = client.get(
+        '/gtfs_rides_agg/group_by',
+        params={'date_from': '2023-05-01', 'date_to': '2023-06-29', 'group_by': 'gtfs_route_date'},
+    )
+    assert res.status_code == 200
+    dates = {item['gtfs_route_date'] for item in res.json()}
+    assert '2023-06-29' in dates
